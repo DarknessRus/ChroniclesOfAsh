@@ -57,6 +57,10 @@ func _build_character() -> void:
     art.name = "CharacterArt"
     add_child(art)
     body_mesh.visible = false
+    # Prefer real textured CC0 character meshes downloaded by the Android build.
+    # Procedural geometry remains only as a safe fallback if the pack is unavailable.
+    if _try_add_free_character(art):
+        return
     var armor := Color(0.34,0.30,0.28)
     var cloth := Color(0.14,0.12,0.13)
     var accent := Color(0.95,0.28,0.06)
@@ -123,6 +127,96 @@ func _build_character() -> void:
         _part_cylinder(weapon,"BoneStaff",0.04,0.06,1.4,Vector3(0,0.20,0),Color(0.72,0.69,0.59))
         _part_sphere(weapon,"SoulOrb",Vector3(0.25,0.25,0.25),Vector3(0,0.92,0),accent,true)
         _part_box(weapon,"SkullMark",Vector3(0.16,0.13,0.12),Vector3(0,0.66,-0.02),Color(0.85,0.83,0.73))
+
+func _try_add_free_character(art: Node3D) -> bool:
+    var files: Array[String] = []
+    _collect_model_files("res://assets/free/rpg_characters", files)
+    if files.is_empty():
+        return false
+    files.sort()
+    var preferred_terms: Array[String] = []
+    match class_id:
+        "warrior": preferred_terms = ["warrior", "knight", "barbarian", "fighter"]
+        "mage": preferred_terms = ["mage", "wizard", "sorcerer"]
+        "ranger": preferred_terms = ["ranger", "archer", "elf", "hunter"]
+        "necromancer": preferred_terms = ["necromancer", "warlock", "dark", "skeleton"]
+    var chosen_path := ""
+    for term in preferred_terms:
+        for path in files:
+            if path.get_file().to_lower().contains(term):
+                chosen_path = path
+                break
+        if not chosen_path.is_empty():
+            break
+    if chosen_path.is_empty():
+        var class_index := 0
+        match class_id:
+            "mage": class_index = 1
+            "ranger": class_index = 2
+            "necromancer": class_index = 3
+        chosen_path = files[mini(class_index, files.size() - 1)]
+    var packed = load(chosen_path)
+    if packed is PackedScene:
+        var model = packed.instantiate()
+        if model is Node3D:
+            model.name = "ImportedCC0Hero"
+            art.add_child(model)
+            call_deferred("_fit_imported_character", model)
+            return true
+        model.queue_free()
+    return false
+
+
+func _collect_model_files(folder: String, output: Array[String]) -> void:
+    var dir := DirAccess.open(folder)
+    if dir == null:
+        return
+    dir.list_dir_begin()
+    var entry := dir.get_next()
+    while not entry.is_empty():
+        if entry.begins_with("."):
+            entry = dir.get_next()
+            continue
+        var path := folder.path_join(entry)
+        if dir.current_is_dir():
+            _collect_model_files(path, output)
+        elif entry.get_extension().to_lower() in ["fbx", "glb", "gltf", "obj"]:
+            output.append(path)
+        entry = dir.get_next()
+    dir.list_dir_end()
+
+
+func _fit_imported_character(model: Node3D) -> void:
+    if not is_instance_valid(model):
+        return
+    var meshes: Array[MeshInstance3D] = []
+    _collect_mesh_instances(model, meshes)
+    if meshes.is_empty():
+        return
+    var bounds := AABB()
+    var first := true
+    for mesh in meshes:
+        if mesh.mesh == null:
+            continue
+        var mesh_bounds: AABB = mesh.global_transform * mesh.get_aabb()
+        if first:
+            bounds = mesh_bounds
+            first = false
+        else:
+            bounds = bounds.merge(mesh_bounds)
+    if first or bounds.size.y <= 0.01:
+        return
+    var factor := 2.15 / bounds.size.y
+    model.scale *= factor
+    model.position.y -= bounds.position.y * factor
+
+
+func _collect_mesh_instances(node: Node, output: Array[MeshInstance3D]) -> void:
+    if node is MeshInstance3D:
+        output.append(node)
+    for child in node.get_children():
+        _collect_mesh_instances(child, output)
+
 
 func _material(color: Color, emissive: bool = false) -> StandardMaterial3D:
     var mat := StandardMaterial3D.new()
