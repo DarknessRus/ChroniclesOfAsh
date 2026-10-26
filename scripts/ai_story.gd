@@ -159,4 +159,4 @@ func on_enemy_defeated(enemy_type: String) -> void:
                 player.level += 1
             world.update_status(player.level, player.health, player.experience)
         if generation_timer:
-            generation_timer.start(5.0)
+            generation_timer.start()
