@@ -14,7 +14,7 @@ window/size/window_height_override=540
 window/stretch/mode="canvas_items"
 
 [ai]
-story_endpoint=""
+story_endpoint="https://chronicles-of-ash-ai.onrender.com/api/story"
 
 [rendering]
 textures/vram_compression/import_etc2_astc=true
