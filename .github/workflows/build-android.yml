@@ -80,6 +80,7 @@ jobs:
         run: godot --headless --editor --path . --quit
 
       - name: Export Android APK
+        shell: bash
         run: |
           set -eux
           export ANDROID_HOME="/usr/lib/android-sdk"
