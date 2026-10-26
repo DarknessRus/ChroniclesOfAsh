@@ -23,6 +23,13 @@ jobs:
           set -eux
           godot --version
 
+          # Godot 4.3 Android export preset targets SDK 34; the base image only
+          # installs API 33, which causes the export preset validation to fail.
+          export ANDROID_HOME="/usr/lib/android-sdk"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
           # Make the export templates visible under the HOME used by GitHub Actions.
           mkdir -p "$HOME/.local/share/godot/export_templates/4.3.stable"
           cp /root/.local/share/godot/export_templates/4.3.stable/android_debug.apk "$HOME/.local/share/godot/export_templates/4.3.stable/"
