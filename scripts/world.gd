@@ -65,6 +65,12 @@ func _build_world() -> void:
         if Vector2(x, z).length() < 13.0:
             continue
         _make_rock(Vector3(x, 0, z), rng.randf_range(0.35, 1.8), rng.randf_range(0.45, 2.2))
+    # Sparse grass, fallen shale and ash clumps keep the ground from looking flat.
+    for i in range(260):
+        var detail_pos := Vector3(rng.randf_range(-world_size * 0.46, world_size * 0.46), 0.0, rng.randf_range(-world_size * 0.46, world_size * 0.46))
+        if Vector2(detail_pos.x, detail_pos.z).length() < 8.0 or (detail_pos.x < -28.0 and detail_pos.x > -41.0):
+            continue
+        _make_ground_detail(detail_pos, rng)
     # Jagged mountain ring on the far horizon.
     for i in range(34):
         var angle := TAU * float(i) / 34.0
@@ -77,6 +83,31 @@ func _build_world() -> void:
     _make_cave_entrance(Vector3(56, 0, 24), "Склеп Пепельного Короля")
     _make_bonfire(Vector3(2, 0, 2))
 
+
+
+func _make_ground_detail(pos: Vector3, rng: RandomNumberGenerator) -> void:
+    if rng.randf() < 0.58:
+        var tuft := MeshInstance3D.new()
+        var mesh := CylinderMesh.new()
+        mesh.top_radius = 0.015
+        mesh.bottom_radius = rng.randf_range(0.07, 0.14)
+        mesh.height = rng.randf_range(0.14, 0.34)
+        mesh.radial_segments = 4
+        tuft.mesh = mesh
+        tuft.position = pos + Vector3(0, mesh.height * 0.5, 0)
+        tuft.rotation = Vector3(rng.randf_range(-0.18, 0.18), rng.randf_range(0, TAU), rng.randf_range(-0.18, 0.18))
+        tuft.material_override = _simple_material([Color(0.12, 0.16, 0.11), Color(0.20, 0.18, 0.12), Color(0.08, 0.12, 0.11)][rng.randi_range(0, 2)])
+        add_child(tuft)
+    else:
+        var shard := MeshInstance3D.new()
+        var mesh := BoxMesh.new()
+        mesh.size = Vector3(rng.randf_range(0.12, 0.42), rng.randf_range(0.06, 0.18), rng.randf_range(0.12, 0.38))
+        shard.mesh = mesh
+        shard.position = pos + Vector3(0, mesh.size.y * 0.5, 0)
+        shard.rotation.y = rng.randf_range(0, TAU)
+        shard.rotation.z = rng.randf_range(-0.12, 0.12)
+        shard.material_override = _simple_material(Color(0.16, 0.17, 0.18))
+        add_child(shard)
 
 func _make_bonfire(pos: Vector3) -> void:
     var base := MeshInstance3D.new()
