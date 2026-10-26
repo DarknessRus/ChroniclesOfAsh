@@ -1,0 +1,35 @@
+name: Build Unity Android APK
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Unity/**'
+      - '.github/workflows/build-unity-android.yml'
+jobs:
+  build:
+    name: Unity Android build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Unity secrets
+        run: |
+          test -n "${{ secrets.UNITY_LICENSE }}" || (echo "Missing UNITY_LICENSE secret. Add Unity Personal license XML in repository Actions secrets." && exit 1)
+          test -n "${{ secrets.UNITY_EMAIL }}" || (echo "Missing UNITY_EMAIL secret." && exit 1)
+          test -n "${{ secrets.UNITY_PASSWORD }}" || (echo "Missing UNITY_PASSWORD secret." && exit 1)
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: Unity
+          targetPlatform: Android
+          unityVersion: 2022.3.62f1
+          buildName: ChroniclesOfAsh
+          buildsPath: build
+          androidAppBundle: false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ChroniclesOfAsh-Unity-APK
+          path: build/Android/*.apk
+          if-no-files-found: error
