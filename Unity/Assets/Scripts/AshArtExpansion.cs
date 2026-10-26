@@ -6,10 +6,17 @@ using UnityEngine;
 /// </summary>
 public static class AshArtExpansion
 {
+    static readonly System.Collections.Generic.Dictionary<string, Material> materialCache = new System.Collections.Generic.Dictionary<string, Material>();
+
     static Material Make(Color color, float smoothness = 0.35f, bool emission = false)
     {
+        string key = color.ToString() + "|" + smoothness + "|" + emission;
+        Material cached;
+        if (materialCache.TryGetValue(key, out cached) && cached != null) return cached;
         Shader shader = Shader.Find("Standard");
         if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null) shader = Shader.Find("UI/Default");
+        if (shader == null) throw new System.InvalidOperationException("No supported shader found for AshArtExpansion materials.");
         var material = new Material(shader);
         material.color = color;
         if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", smoothness);
@@ -18,9 +25,9 @@ public static class AshArtExpansion
             material.EnableKeyword("_EMISSION");
             material.SetColor("_EmissionColor", color * 1.8f);
         }
+        materialCache[key] = material;
         return material;
     }
-
     static GameObject Part(Transform parent, PrimitiveType type, string name, Vector3 position,
         Vector3 scale, Color color, Vector3? rotation = null, bool glow = false)
     {
