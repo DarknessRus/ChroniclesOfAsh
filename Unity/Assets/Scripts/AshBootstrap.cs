@@ -151,29 +151,93 @@ public class AshBootstrap : MonoBehaviour
         var t=g.GetComponent<Text>();t.text=value;t.font=font;t.fontSize=size;t.color=color;t.alignment=anchor;t.fontStyle=style;t.horizontalOverflow=HorizontalWrapMode.Wrap;t.verticalOverflow=VerticalWrapMode.Truncate;t.raycastTarget=false;return t;
     }
 
+    bool gameStarting;
+    GameObject loadingRoot;
+    Text loadingLabel;
+
     void StartGame()
     {
-        Debug.Log("[Ash Chronicles] StartGame pressed; building playable world.");
+        if (gameStarting) return;
+        gameStarting = true;
+        Debug.Log("[Ash Chronicles] Start button received; starting staged world creation.");
+        StartCoroutine(StartGameRoutine());
+    }
+
+    System.Collections.IEnumerator StartGameRoutine()
+    {
+        if (menuRoot != null) menuRoot.SetActive(false);
+        if (canvas != null) canvas.gameObject.SetActive(true);
+        loadingRoot = AddPanel(canvas.transform, Vector2.zero, Vector2.one, new Color(.025f,.032f,.038f,.98f));
+        loadingRoot.name = "World Loading Overlay";
+        loadingLabel = AddText(loadingRoot.transform, "ПРОБУЖДЕНИЕ ПЕПЕЛЬНОЙ ДОЛИНЫ...\nПодготовка мира", 30,
+            new Vector2(.12f,.38f), new Vector2(.88f,.62f), new Color(.94f,.72f,.38f),
+            TextAnchor.MiddleCenter, FontStyle.Bold);
+
+        // Let Unity render the loading overlay before creating any scene objects.
+        yield return null;
+        worldRoot = new GameObject("Ash Valley World");
+
+        if (!RunBuildStep("Создание долины...", delegate { BuildWorld(worldRoot.transform); })) yield break;
+        yield return null;
+
+        // AshOpenWorld is the single full-scale terrain/river/forest generator.
+        // The older BuildOpenWorld generator created a second, overlapping forest and river.
+        if (!RunBuildStep("Создание открытого мира: горы, реки и леса...", delegate { AshOpenWorld.Build(worldRoot.transform); })) yield break;
+        yield return null;
+
+        if (!RunBuildStep("Добавление руин и деталей...", delegate { AshArtExpansion.Build(worldRoot.transform); })) yield break;
+        yield return null;
+
+        if (!RunBuildStep("Создание замка и долины...", delegate { AshWorldUpgrade.BuildCastleAndValley(worldRoot.transform); })) yield break;
+        yield return null;
+
+        if (!RunBuildStep("Подготовка заданий...", delegate { worldRoot.AddComponent<AshAIQuestDirector>(); })) yield break;
+        yield return null;
+
+        if (!RunBuildStep("Создание героя и управления...", BuildPlayerAndHud)) yield break;
+        gameStarting = false;
+        Debug.Log("[Ash Chronicles] Playable world is ready.");
+    }
+
+    bool RunBuildStep(string status, System.Action action)
+    {
         try
         {
-            if (menuRoot != null) menuRoot.SetActive(false);
-            if (canvas != null) canvas.gameObject.SetActive(false);
-            if (worldRoot != null) Destroy(worldRoot);
-            worldRoot = new GameObject("Ash Valley World");
-            BuildWorld(worldRoot.transform);
-                        AshWorldUpgrade.BuildOpenWorld(worldRoot.transform);
-AshOpenWorld.Build(worldRoot.transform);
-            AshArtExpansion.Build(worldRoot.transform);
-            AshWorldUpgrade.BuildCastleAndValley(worldRoot.transform);
-            worldRoot.AddComponent<AshAIQuestDirector>();
+            if (loadingLabel != null) loadingLabel.text = status;
+            Debug.Log("[Ash Chronicles] " + status);
+            action();
+            return true;
         }
         catch (System.Exception ex)
         {
-            Debug.LogError("[Ash Chronicles] World creation failed: " + ex);
-            if (canvas != null) canvas.gameObject.SetActive(true);
-            if (menuRoot != null) menuRoot.SetActive(true);
-            return;
+            Debug.LogError("[Ash Chronicles] " + status + " FAILED: " + ex);
+            if (loadingLabel != null) loadingLabel.text = "НЕ УДАЛОСЬ ЗАПУСТИТЬ ИГРУ\n" + ex.GetType().Name + ": " + ex.Message;
+            var back = AddPanel(loadingRoot.transform, new Vector2(.34f,.18f), new Vector2(.66f,.29f), new Color(.55f,.22f,.07f,1));
+            back.name = "Return to character selection";
+            AddText(back.transform, "НАЗАД К ВЫБОРУ ГЕРОЯ", 20, Vector2.zero, Vector2.one,
+                new Color(1f,.91f,.72f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            var button = back.AddComponent<Button>();
+            button.targetGraphic = back.GetComponent<Image>();
+            button.onClick.AddListener(ReturnToMenuAfterFailure);
+            gameStarting = false;
+            return false;
         }
+    }
+
+    void ReturnToMenuAfterFailure()
+    {
+        if (worldRoot != null) Destroy(worldRoot);
+        worldRoot = null;
+        if (loadingRoot != null) Destroy(loadingRoot);
+        loadingRoot = null;
+        loadingLabel = null;
+        if (canvas != null) canvas.gameObject.SetActive(true);
+        if (menuRoot != null) menuRoot.SetActive(true);
+        gameStarting = false;
+    }
+
+    void BuildPlayerAndHud()
+    {
         var player=GameObject.CreatePrimitive(PrimitiveType.Capsule);
         player.name=heroNames[selectedHero]+" Player"; player.transform.position=new Vector3(0,1,0);
         player.GetComponent<Renderer>().material=Mat(new Color(.22f,.24f,.25f),.65f);
@@ -196,12 +260,10 @@ AshOpenWorld.Build(worldRoot.transform);
     void BuildWorld(Transform root)
     {
         RenderSettings.ambientLight=new Color(.34f,.37f,.37f);
-        var ground=GameObject.CreatePrimitive(PrimitiveType.Plane);ground.name="Mossy valley";ground.transform.SetParent(root);ground.transform.localScale=new Vector3(90,1,90);ground.GetComponent<Renderer>().material=Mat(new Color(.16f,.23f,.18f),.9f);
-        // Layered mountain silhouettes form the first playable skyline.
-        for(int i=0;i<14;i++){float x=(i-7)*7.2f;var m=GameObject.CreatePrimitive(PrimitiveType.Cube);m.name="Distant mountain";m.transform.SetParent(root);m.transform.position=new Vector3(x,5+Mathf.Sin(i*1.7f)*2,32+Mathf.Cos(i)*3);m.transform.rotation=Quaternion.Euler(0,i*19,0);m.transform.localScale=new Vector3(12,18+Mathf.Abs(Mathf.Sin(i*2))*14,10);m.GetComponent<Renderer>().material=Mat(new Color(.16f,.22f,.24f),1);}
-        for(int i=0;i<70;i++){float x=Mathf.Sin(i*12.37f)*36;float z=Mathf.Cos(i*5.17f)*34+8;CreateTree(root,new Vector3(x,0,z),1+Mathf.Abs(Mathf.Sin(i))*1.8f);}
+        // The open-world terrain mesh supplies the ground; do not place a giant flat plane over it.
+        // Mountains and forests are supplied by AshOpenWorld; avoid building a second overlapping set.
         // River and stone crossing.
-        var river=GameObject.CreatePrimitive(PrimitiveType.Cube);river.name="Moon river";river.transform.SetParent(root);river.transform.position=new Vector3(0,.04f,7);river.transform.localScale=new Vector3(4,.08f,70);river.GetComponent<Renderer>().material=Mat(new Color(.08f,.28f,.35f),.25f);
+        // The winding river is generated by AshOpenWorld; keep the stone crossing below.
         for(int i=0;i<7;i++){var stone=GameObject.CreatePrimitive(PrimitiveType.Cube);stone.name="Old stone bridge";stone.transform.SetParent(root);stone.transform.position=new Vector3(0,.18f,2+i*.85f);stone.transform.localScale=new Vector3(4.8f,.35f,.75f);stone.GetComponent<Renderer>().material=Mat(new Color(.34f,.34f,.31f),.95f);}
         // Distant gothic keep.
         var keep=GameObject.CreatePrimitive(PrimitiveType.Cube);keep.name="Ashen castle";keep.transform.SetParent(root);keep.transform.position=new Vector3(0,7,48);keep.transform.localScale=new Vector3(13,14,7);keep.GetComponent<Renderer>().material=Mat(new Color(.17f,.18f,.19f),.95f);
