@@ -78,6 +78,23 @@ jobs:
           test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_release.apk"
           cat export_presets.cfg
 
+      - name: Download free CC0 fantasy character assets
+        shell: bash
+        run: |
+          set -u
+          mkdir -p assets/free/rpg_characters /tmp/rpg-character-pack
+          python3 -m pip install --quiet gdown
+          if gdown --folder "https://drive.google.com/drive/folders/1MIRQXLfTd21HMI5rwOb6Xy0rv0xv1m8b" --remaining-ok -O /tmp/rpg-character-pack; then
+            find /tmp/rpg-character-pack -type f -iname '*.zip' -print0 | while IFS= read -r -d '' archive; do
+              unzip -oq "$archive" -d /tmp/rpg-character-pack/unpacked || true
+            done
+            find /tmp/rpg-character-pack -type f \( -iname '*.fbx' -o -iname '*.glb' -o -iname '*.gltf' -o -iname '*.obj' -o -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.tga' -o -iname '*.mtl' -o -iname '*.bin' \) -not -path '*/.git/*' -exec cp --parents '{}' assets/free/rpg_characters/ \;
+            echo "Imported source files:"
+            find assets/free/rpg_characters -type f | head -80
+          else
+            echo "::warning::The public CC0 character pack could not be downloaded; continuing with built-in fallback art."
+          fi
+
       - name: Import and validate Godot project
         run: godot --headless --editor --path . --quit
 
