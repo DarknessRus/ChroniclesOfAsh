@@ -1,0 +1,111 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!129 &1
+PlayerSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 26
+  productGUID: 7d42f0ce9c8d4b1f90efbda5a0fba501
+  AndroidProfiler: 0
+  AndroidFilterTouchesWhenObscured: 0
+  defaultScreenOrientation: 3
+  targetDevice: 2
+  useOnDemandResources: 0
+  accelerometerFrequency: 60
+  companyName: Ash Chronicles Studio
+  productName: Хроники Пепла
+  applicationIdentifier:
+    Android: com.ashchronicles.game
+  bundleVersion: 0.1.0
+  bundleVersionCode: 1
+  AndroidBundleVersionCode: 1
+  AndroidMinSdkVersion: 23
+  AndroidTargetSdkVersion: 34
+  scriptingBackend:
+    Android: 1
+  il2cppCompilerConfiguration:
+    Android: 0
+  managedStrippingLevel:
+    Android: 1
+  apiCompatibilityLevelPerPlatform:
+    Android: 6
+  AndroidTargetArchitectures: 2
+  graphicsJobs: 0
+  use32BitDisplayBuffer: 0
+  colorSpace: 0
+  activeInputHandler: 0
+  companyName: Ash Chronicles Studio
+  m_ActiveColorSpace: 0
+  m_SplashScreenBackgroundColor: {r: 0.035, g: 0.045, b: 0.052, a: 1}
+  m_SplashScreenLogos: []
+  m_SplashScreenAnimation: 1
+  m_ShowUnitySplashScreen: 1
+  m_ShowUnitySplashLogo: 1
+  m_StereoRenderingPath: 0
+  m_ActiveColorSpace: 0
+  m_MobileMTRendering: 1
+  m_AndroidEnableSustainedPerformanceMode: 0
+  m_AndroidBlitType: 0
+  m_AndroidResizableWindow: 0
+  m_AndroidMinifyRelease: 0
+  m_AndroidMinifyDebug: 0
+  m_AndroidBuildSystem: 0
+  m_AndroidExportType: 0
+  m_AndroidCreateSymbols: 0
+  m_AndroidUseCustomKeystore: 0
+  m_AndroidKeyaliasName:
+  m_AndroidKeyaliasPass:
+  m_AndroidKeystoreName:
+  m_AndroidKeystorePass:
+  m_BuildTargetIcons: []
+  m_BuildTargetPlatformIcons: []
+  m_BuildTargetBatching: []
+  m_BuildTargetGraphicsJobs: []
+  m_BuildTargetGraphicsAPIs: []
+  m_BuildTargetVRSettings: []
+  m_BuildTargetShaderSettings: []
+  m_BuildTargetDefaultTextureCompressionFormat: []
+  m_BuildTargetResolutionSettings: []
+  m_BuildTargetSplashScreen: []
+  m_BuildTargetIcons: []
+  m_BuildTargetGroupIcons: []
+  m_BuildTargetGroupLightmapSettings: []
+  m_BuildTargetGraphicsSettings: []
+  m_BuildTargetGroupSettings: []
+  m_BuildTargetGroupStandalone: []
+  m_BuildTargetGroupAndroid: []
+  m_BuildTargetGroupWebGL: []
+  m_BuildTargetGroupiOS: []
+  m_BuildTargetGroupPS4: []
+  m_BuildTargetGroupXboxOne: []
+  m_BuildTargetGroupSwitch: []
+  m_UseCustomMainManifest: 0
+  m_UseCustomMainGradleTemplate: 0
+  m_UseCustomLauncherGradleTemplate: 0
+  m_UseCustomMainGradleTemplate: 0
+  m_UseCustomBaseGradleTemplate: 0
+  m_UseCustomGradlePropertiesTemplate: 0
+  m_UseCustomProguardFile: 0
+  m_UseCustomMainManifest: 0
+  m_UseCustomLauncherGradleTemplate: 0
+  m_UseCustomMainGradleTemplate: 0
+  m_UseCustomBaseGradleTemplate: 0
+  m_UseCustomGradlePropertiesTemplate: 0
+  m_UseCustomProguardFile: 0
+  m_UseCustomGradleSettingsTemplate: 0
+  m_UseCustomGradleSettingsTemplate: 0
+  m_UseCustomGradleLauncherTemplate: 0
+  m_UseCustomGradleBaseTemplate: 0
+  m_UseCustomGradlePropertiesTemplate: 0
+  m_UseCustomProguardFile: 0
+  m_UseCustomProguardFile: 0
+  m_UseCustomGradleTemplate: 0
+  m_UseCustomGradlePropertiesTemplate: 0
+  m_UseCustomLauncherGradleTemplate: 0
+  m_UseCustomManifest: 0
+  m_UseCustomKeystore: 0
+  m_UseCustomKeystore: 0
+  m_BuildTargetAndroid: 0
+  m_BuildTargetGroupAndroid: []
+  m_BuildTargetIcons: []
+  m_BuildTargetPlatformIcons: []
+  m_BuildTargetResolutionSettings: []
