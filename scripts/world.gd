@@ -189,7 +189,7 @@ func _on_cave_entered(body: Node3D, cave_name: String, pos: Vector3) -> void:
     _generate_local_dungeon(cave_name, pos)
 
 func _generate_local_dungeon(cave_name: String, pos: Vector3) -> void:
-    var dungeon := get_node_or_null("ActiveDungeon")
+    var dungeon: Node3D = get_node_or_null("ActiveDungeon") as Node3D
     if dungeon:
         dungeon.queue_free()
     dungeon = Node3D.new()
