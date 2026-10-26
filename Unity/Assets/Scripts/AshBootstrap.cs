@@ -140,13 +140,16 @@ public class AshBootstrap : MonoBehaviour
         if(worldRoot!=null)Destroy(worldRoot);
         worldRoot=new GameObject("Ash Valley World");
         BuildWorld(worldRoot.transform);
+        AshArtExpansion.Build(worldRoot.transform);
         var player=GameObject.CreatePrimitive(PrimitiveType.Capsule);
         player.name=heroNames[selectedHero]+" Player"; player.transform.position=new Vector3(0,1,0);
         player.GetComponent<Renderer>().material=Mat(new Color(.22f,.24f,.25f),.65f);
         var controller=player.AddComponent<CharacterController>(); controller.height=1.8f; controller.radius=.35f;
         player.AddComponent<AshPlayerController>();
         BuildHeroSilhouette(player.transform, selectedHero);
+        AshArtExpansion.DetailHero(player.transform, selectedHero);
         var enemy=GameObject.CreatePrimitive(PrimitiveType.Capsule);enemy.name="Ash Wraith";enemy.transform.position=new Vector3(2,1,5);enemy.GetComponent<Renderer>().material=Mat(new Color(.35f,.12f,.16f),.8f);enemy.AddComponent<AshEnemy>();
+        AshArtExpansion.DetailWraith(enemy.transform);
         var cam=new GameObject("Follow Camera").AddComponent<Camera>(); cam.tag="MainCamera";
         cam.transform.position=new Vector3(0,5,-8);cam.transform.LookAt(player.transform.position+Vector3.up*1.2f);
         var follow=cam.gameObject.AddComponent<AshFollowCamera>();follow.target=player.transform;
