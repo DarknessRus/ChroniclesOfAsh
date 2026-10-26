@@ -6,6 +6,40 @@ var world_seed: int = 0
 var world_size: float = 180.0
 var dungeon_count: int = 0
 
+class MinimapArt extends Control:
+    func _ready() -> void:
+        custom_minimum_size = Vector2(132, 132)
+        queue_redraw()
+
+    func _draw() -> void:
+        var center := size * 0.5
+        var radius := minf(size.x, size.y) * 0.43
+        draw_circle(center, radius + 5.0, Color(0.035, 0.025, 0.022, 0.96))
+        draw_arc(center, radius + 3.0, 0.0, TAU, 72, Color(0.72, 0.39, 0.15), 2.0, true)
+        draw_circle(center, radius, Color(0.07, 0.10, 0.085, 0.98))
+        # Stylised topographic map, river and forest masses.
+        for i in range(5):
+            var rr := radius * (0.24 + float(i) * 0.15)
+            draw_arc(center + Vector2(-7.0, 3.0), rr, 0.0, TAU, 48, Color(0.20, 0.24, 0.18, 0.8), 1.0, true)
+        draw_colored_polygon(PackedVector2Array([
+            center + Vector2(-radius, -radius * 0.25),
+            center + Vector2(-radius * 0.48, -radius * 0.10),
+            center + Vector2(-radius * 0.16, radius * 0.25),
+            center + Vector2(radius * 0.16, radius * 0.42),
+            center + Vector2(radius * 0.30, radius),
+            center + Vector2(radius * 0.12, radius),
+            center + Vector2(-radius * 0.12, radius * 0.32),
+            center + Vector2(-radius * 0.52, radius * 0.04)
+        ]), Color(0.10, 0.28, 0.36, 0.92))
+        for i in range(18):
+            var angle := TAU * float(i) / 18.0
+            var p := center + Vector2(cos(angle), sin(angle)) * radius * (0.52 + float(i % 3) * 0.08)
+            draw_circle(p, 2.2, Color(0.16, 0.25, 0.16))
+        draw_circle(center + Vector2(radius * 0.30, -radius * 0.28), 4.0, Color(1.0, 0.32, 0.08))
+        draw_circle(center, 4.0, Color(0.95, 0.78, 0.42))
+        draw_line(center + Vector2(-6, 0), center + Vector2(6, 0), Color(1.0, 0.9, 0.68), 1.2)
+        draw_line(center + Vector2(0, -6), center + Vector2(0, 6), Color(1.0, 0.9, 0.68), 1.2)
+
 func _ready() -> void:
     randomize()
     world_seed = randi()
@@ -33,6 +67,7 @@ func _ready() -> void:
     $Ground.position.y = -0.5
     _build_world()
     _build_class_picker()
+    _build_minimap_hud()
     _spawn_enemy(Vector3(5, 0.8, -4), "slime")
     _spawn_enemy(Vector3(-13, 0.8, -9), "ash_wolf")
     _spawn_enemy(Vector3(15, 0.8, 13), "bone_wretch")
@@ -346,6 +381,39 @@ func spawn_ai_dungeon(event_data: Dictionary) -> void:
     notice.font_size = 38
     notice.modulate = Color(1.0, 0.46, 0.16)
     add_child(notice)
+
+func _build_minimap_hud() -> void:
+    var hud := $HUD
+    var frame := PanelContainer.new()
+    frame.name = "MinimapFrame"
+    frame.anchor_left = 1.0
+    frame.anchor_right = 1.0
+    frame.offset_left = -156.0
+    frame.offset_right = -14.0
+    frame.offset_top = 12.0
+    frame.offset_bottom = 184.0
+    var frame_style := StyleBoxFlat.new()
+    frame_style.bg_color = Color(0.025, 0.02, 0.022, 0.92)
+    frame_style.border_color = Color(0.56, 0.29, 0.11)
+    frame_style.set_border_width_all(1)
+    frame_style.content_margin_left = 4
+    frame_style.content_margin_right = 4
+    frame_style.content_margin_top = 4
+    frame_style.content_margin_bottom = 4
+    frame.add_theme_stylebox_override("panel", frame_style)
+    hud.add_child(frame)
+    var stack := VBoxContainer.new()
+    stack.add_theme_constant_override("separation", 2)
+    frame.add_child(stack)
+    var map := MinimapArt.new()
+    map.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+    stack.add_child(map)
+    var location := Label.new()
+    location.text = "ДОЛИНА ТЕНЕЙ"
+    location.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    location.add_theme_font_size_override("font_size", 10)
+    location.add_theme_color_override("font_color", Color(0.92, 0.70, 0.42))
+    stack.add_child(location)
 
 func _build_class_picker() -> void:
     var hud := $HUD
