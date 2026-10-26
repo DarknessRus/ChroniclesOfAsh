@@ -52,12 +52,14 @@ jobs:
           # Explicitly configure the debug signing key in the Android export preset.
           # Use awk because the Godot CI container does not include Python.
           awk -v home="$HOME" '
-            { print }
-            $0 == "package/signed=true" {
+            $0 == "[preset.0.options]" {
+              print
               print "keystore/debug=\"" home "/.android/debug.keystore\""
               print "keystore/debug_user=\"androiddebugkey\""
               print "keystore/debug_password=\"android\""
+              next
             }
+            { print }
           ' export_presets.cfg > export_presets.cfg.tmp
           mv export_presets.cfg.tmp export_presets.cfg
 
