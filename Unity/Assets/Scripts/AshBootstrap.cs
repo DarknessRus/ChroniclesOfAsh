@@ -100,7 +100,8 @@ public class AshBootstrap : MonoBehaviour
             portraitImage.sprite = AshHeroPortraits.Create(i);
             portraitImage.preserveAspect = true;
             portraitImage.raycastTarget = false;
-            AddPanel(card.transform,new Vector2(.035f,.295f),new Vector2(.965f,.305f),new Color(.86f,.58f,.22f,.9f));
+            var divider = AddPanel(card.transform,new Vector2(.035f,.295f),new Vector2(.965f,.305f),new Color(.86f,.58f,.22f,.9f));
+            divider.GetComponent<Image>().raycastTarget = false;
             AddText(card.transform,heroNames[i],23,new Vector2(0.04f,0.12f),new Vector2(0.96f,0.29f),new Color(0.96f,0.91f,0.78f),TextAnchor.MiddleCenter,FontStyle.Bold);
             AddText(card.transform,heroRoles[i],15,new Vector2(0.02f,0.025f),new Vector2(0.98f,0.13f),new Color(0.75f,0.75f,0.71f),TextAnchor.MiddleCenter,FontStyle.Normal);
             var b=card.AddComponent<Button>();
@@ -114,7 +115,15 @@ public class AshBootstrap : MonoBehaviour
         AddText(menuRoot.transform,"ТВОЯ ЛЕГЕНДА НАЧИНАЕТСЯ ЗДЕСЬ",17,new Vector2(0.69f,0.39f),new Vector2(0.96f,0.48f),new Color(0.79f,0.56f,0.25f),TextAnchor.MiddleLeft,FontStyle.Bold);
         var start=AddPanel(menuRoot.transform,new Vector2(0.70f,0.16f),new Vector2(0.95f,0.29f),new Color(0.67f,0.32f,0.09f,1));
         AddText(start.transform,"НАЧАТЬ ПУТЬ  ▶",27,new Vector2(0,0),new Vector2(1,1),new Color(1f,.91f,.70f),TextAnchor.MiddleCenter,FontStyle.Bold);
-        var startButton=start.AddComponent<Button>(); startButton.targetGraphic=start.GetComponent<Image>(); startButton.onClick.AddListener(StartGame);
+        // A dedicated transparent hit target sits above all decorative UI children.
+        var startHit = new GameObject("Start Path Hit Target", typeof(RectTransform), typeof(Image), typeof(Button));
+        startHit.transform.SetParent(menuRoot.transform, false);
+        var hitRect = startHit.GetComponent<RectTransform>();
+        hitRect.anchorMin = new Vector2(.70f,.16f); hitRect.anchorMax = new Vector2(.95f,.29f);
+        hitRect.offsetMin = Vector2.zero; hitRect.offsetMax = Vector2.zero;
+        var hitImage = startHit.GetComponent<Image>(); hitImage.color = new Color(1f,1f,1f,0f); hitImage.raycastTarget = true;
+        var startButton = startHit.GetComponent<Button>(); startButton.targetGraphic = hitImage;
+        startButton.onClick.AddListener(StartGame);
         AddText(menuRoot.transform,"ОДИНОЧНОЕ ПРИКЛЮЧЕНИЕ  •  ТЁМНОЕ ФЭНТЕЗИ",14,new Vector2(0.04f,0.07f),new Vector2(0.62f,0.13f),new Color(.43f,.48f,.47f),TextAnchor.MiddleLeft,FontStyle.Normal);
     }
 
@@ -144,13 +153,25 @@ public class AshBootstrap : MonoBehaviour
 
     void StartGame()
     {
-        if(canvas!=null)Destroy(canvas.gameObject);
-        if(worldRoot!=null)Destroy(worldRoot);
-        worldRoot=new GameObject("Ash Valley World");
-        BuildWorld(worldRoot.transform);
-        AshArtExpansion.Build(worldRoot.transform);
-        AshWorldUpgrade.BuildCastleAndValley(worldRoot.transform);
-        worldRoot.AddComponent<AshAIQuestDirector>();
+        Debug.Log("[Ash Chronicles] StartGame pressed; building playable world.");
+        try
+        {
+            if (menuRoot != null) menuRoot.SetActive(false);
+            if (canvas != null) canvas.gameObject.SetActive(false);
+            if (worldRoot != null) Destroy(worldRoot);
+            worldRoot = new GameObject("Ash Valley World");
+            BuildWorld(worldRoot.transform);
+            AshArtExpansion.Build(worldRoot.transform);
+            AshWorldUpgrade.BuildCastleAndValley(worldRoot.transform);
+            worldRoot.AddComponent<AshAIQuestDirector>();
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError("[Ash Chronicles] World creation failed: " + ex);
+            if (canvas != null) canvas.gameObject.SetActive(true);
+            if (menuRoot != null) menuRoot.SetActive(true);
+            return;
+        }
         var player=GameObject.CreatePrimitive(PrimitiveType.Capsule);
         player.name=heroNames[selectedHero]+" Player"; player.transform.position=new Vector3(0,1,0);
         player.GetComponent<Renderer>().material=Mat(new Color(.22f,.24f,.25f),.65f);
