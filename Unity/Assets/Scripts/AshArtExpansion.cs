@@ -32,6 +32,9 @@ public static class AshArtExpansion
         if (rotation.HasValue) go.transform.rotation = Quaternion.Euler(rotation.Value);
         var renderer = go.GetComponent<Renderer>();
         if (renderer != null) renderer.sharedMaterial = Make(color, 0.72f, glow);
+        // Decorative armor pieces must not add dozens of overlapping colliders to the mobile player.
+        var collider = go.GetComponent<Collider>();
+        if (collider != null) Object.Destroy(collider);
         return go;
     }
 
