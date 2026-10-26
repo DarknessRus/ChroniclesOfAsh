@@ -4,7 +4,7 @@ config_version=5
 config/name="Хроники Пепла"
 run/main_scene="res://scenes/world.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
-config/description="Одиночная офлайн RPG для Android: стилизованный 3D-мир с видом сверху."
+config/description="Тёмное фэнтези RPG для Android с динамическими сюжетными событиями."
 
 [display]
 window/size/viewport_width=960
@@ -12,6 +12,9 @@ window/size/viewport_height=540
 window/size/window_width_override=960
 window/size/window_height_override=540
 window/stretch/mode="canvas_items"
+
+[ai]
+story_endpoint=""
 
 [rendering]
 textures/vram_compression/import_etc2_astc=true
