@@ -86,3 +86,4 @@ func attack() -> void:
                 experience -= level * 50
                 level += 1
             get_parent().update_status(level, health, experience)
+            get_parent().on_enemy_defeated("slime")
