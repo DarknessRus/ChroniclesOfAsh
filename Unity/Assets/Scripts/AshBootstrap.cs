@@ -91,8 +91,17 @@ public class AshBootstrap : MonoBehaviour
             int index=i;
             float x0=0.045f+i*0.155f;
             var card=AddPanel(menuRoot.transform,new Vector2(x0,0.25f),new Vector2(x0+0.145f,0.69f),new Color(0.10f,0.12f,0.13f,1));
-            AddPanel(card.transform,new Vector2(0.035f,0.30f),new Vector2(0.965f,0.96f),HeroColor(i));
-            AddHeroSigil(card.transform,i);
+            var portraitObject = new GameObject("Hero portrait " + heroNames[i], typeof(RectTransform), typeof(Image));
+            portraitObject.transform.SetParent(card.transform, false);
+            var portraitRect = portraitObject.GetComponent<RectTransform>();
+            portraitRect.anchorMin = new Vector2(.035f,.30f);
+            portraitRect.anchorMax = new Vector2(.965f,.96f);
+            portraitRect.offsetMin = Vector2.zero; portraitRect.offsetMax = Vector2.zero;
+            var portraitImage = portraitObject.GetComponent<Image>();
+            portraitImage.sprite = AshHeroPortraits.Create(i);
+            portraitImage.preserveAspect = true;
+            portraitImage.raycastTarget = false;
+            AddPanel(card.transform,new Vector2(.035f,.295f),new Vector2(.965f,.305f),new Color(.86f,.58f,.22f,.9f));
             AddText(card.transform,heroNames[i],23,new Vector2(0.04f,0.12f),new Vector2(0.96f,0.29f),new Color(0.96f,0.91f,0.78f),TextAnchor.MiddleCenter,FontStyle.Bold);
             AddText(card.transform,heroRoles[i],15,new Vector2(0.02f,0.025f),new Vector2(0.98f,0.13f),new Color(0.75f,0.75f,0.71f),TextAnchor.MiddleCenter,FontStyle.Normal);
             var b=card.AddComponent<Button>();
@@ -141,13 +150,15 @@ public class AshBootstrap : MonoBehaviour
         worldRoot=new GameObject("Ash Valley World");
         BuildWorld(worldRoot.transform);
         AshArtExpansion.Build(worldRoot.transform);
+        AshWorldUpgrade.BuildCastleAndValley(worldRoot.transform);
         worldRoot.AddComponent<AshAIQuestDirector>();
         var player=GameObject.CreatePrimitive(PrimitiveType.Capsule);
         player.name=heroNames[selectedHero]+" Player"; player.transform.position=new Vector3(0,1,0);
         player.GetComponent<Renderer>().material=Mat(new Color(.22f,.24f,.25f),.65f);
         var controller=player.AddComponent<CharacterController>(); controller.height=1.8f; controller.radius=.35f;
         player.AddComponent<AshPlayerController>();
-        BuildHeroSilhouette(player.transform, selectedHero);
+        // Keep the CharacterController capsule for collision, but show only the assembled armor model.
+        player.GetComponent<Renderer>().enabled = false;
         AshArtExpansion.DetailHero(player.transform, selectedHero);
         var enemy=GameObject.CreatePrimitive(PrimitiveType.Capsule);enemy.name="Ash Wraith";enemy.transform.position=new Vector3(2,1,5);enemy.GetComponent<Renderer>().material=Mat(new Color(.35f,.12f,.16f),.8f);enemy.AddComponent<AshEnemy>();
         AshArtExpansion.DetailWraith(enemy.transform);
