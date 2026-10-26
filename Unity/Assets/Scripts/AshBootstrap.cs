@@ -141,6 +141,7 @@ public class AshBootstrap : MonoBehaviour
         worldRoot=new GameObject("Ash Valley World");
         BuildWorld(worldRoot.transform);
         AshArtExpansion.Build(worldRoot.transform);
+        worldRoot.AddComponent<AshAIQuestDirector>();
         var player=GameObject.CreatePrimitive(PrimitiveType.Capsule);
         player.name=heroNames[selectedHero]+" Player"; player.transform.position=new Vector3(0,1,0);
         player.GetComponent<Renderer>().material=Mat(new Color(.22f,.24f,.25f),.65f);
