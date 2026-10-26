@@ -3,20 +3,28 @@ using UnityEngine;
 /// <summary>Second environment pass: layered gothic keep, cliffs, battlements and emissive windows.</summary>
 public static class AshWorldUpgrade
 {
+    static readonly System.Collections.Generic.Dictionary<string, Material> materialCache = new System.Collections.Generic.Dictionary<string, Material>();
+
     static Material Mat(Color color, float smooth=0.75f, bool glow=false)
     {
-        var shader=Shader.Find("Standard");
-        var m=new Material(shader);
-        m.color=color;
-        if(m.HasProperty("_Glossiness"))m.SetFloat("_Glossiness",smooth);
-        if(glow&&m.HasProperty("_EmissionColor"))
+        string key = color.ToString() + "|" + smooth + "|" + glow;
+        Material cached;
+        if (materialCache.TryGetValue(key, out cached) && cached != null) return cached;
+        var shader = Shader.Find("Standard");
+        if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null) shader = Shader.Find("UI/Default");
+        if (shader == null) throw new System.InvalidOperationException("No supported shader found for AshWorldUpgrade materials.");
+        var m = new Material(shader);
+        m.color = color;
+        if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", smooth);
+        if (glow && m.HasProperty("_EmissionColor"))
         {
             m.EnableKeyword("_EMISSION");
-            m.SetColor("_EmissionColor",color*2.2f);
+            m.SetColor("_EmissionColor", color * 2.2f);
         }
+        materialCache[key] = m;
         return m;
     }
-
     static GameObject Part(Transform root,PrimitiveType type,string name,Vector3 p,Vector3 s,Color c,Vector3? rotation=null,bool glow=false,bool solid=false)
     {
         var g=GameObject.CreatePrimitive(type);
