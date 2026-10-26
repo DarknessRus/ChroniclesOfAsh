@@ -14,7 +14,7 @@ public class AshPlayerController : MonoBehaviour {
   cc.Move(move*moveSpeed*Time.deltaTime);
   if(cc.isGrounded&&velocity.y<0)velocity.y=-2f;
   velocity.y+=gravity*Time.deltaTime; cc.Move(velocity*Time.deltaTime);
-  if(AshCombatButton.AttackPressed){AshCombatButton.AttackPressed=false;Debug.Log("Ash combat action");}
+  if(AshCombatButton.AttackPressed){AshCombatButton.AttackPressed=false;var hits=Physics.OverlapSphere(transform.position+transform.forward*1.35f+Vector3.up*.6f,1.45f);foreach(var hit in hits){var enemy=hit.GetComponentInParent<AshEnemy>();if(enemy!=null)enemy.TakeDamage(25f);}}
  }
  Vector3 CameraRelative(Vector3 input){
   var cam=Camera.main;if(cam==null)return input;
