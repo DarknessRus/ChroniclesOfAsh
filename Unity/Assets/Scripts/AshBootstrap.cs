@@ -35,11 +35,29 @@ public class AshBootstrap : MonoBehaviour
 
     void EnsureEventSystem()
     {
-        if (FindObjectOfType<EventSystem>() == null)
+        // Keep one active EventSystem and make sure it can process legacy touch input on Android.
+        var eventSystem = FindObjectOfType<EventSystem>();
+        if (eventSystem == null)
         {
-            var e = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            var e = new GameObject("EventSystem", typeof(EventSystem));
+            eventSystem = e.GetComponent<EventSystem>();
             DontDestroyOnLoad(e);
         }
+
+        var module = eventSystem.GetComponent<StandaloneInputModule>();
+        if (module == null)
+            module = eventSystem.gameObject.AddComponent<StandaloneInputModule>();
+
+        // Avoid two input modules competing for the same pointer events.
+        var modules = eventSystem.GetComponents<BaseInputModule>();
+        foreach (var inputModule in modules)
+        {
+            if (inputModule != module)
+                inputModule.enabled = false;
+        }
+
+        module.enabled = true;
+        module.forceModuleActive = true;
     }
 
     void CreateCanvas()
@@ -113,7 +131,7 @@ public class AshBootstrap : MonoBehaviour
     {
         var g=new GameObject("Text",typeof(RectTransform),typeof(Text));g.transform.SetParent(parent,false);
         var r=g.GetComponent<RectTransform>();r.anchorMin=min;r.anchorMax=max;r.offsetMin=new Vector2(8,4);r.offsetMax=new Vector2(-8,-4);
-        var t=g.GetComponent<Text>();t.text=value;t.font=font;t.fontSize=size;t.color=color;t.alignment=anchor;t.fontStyle=style;t.horizontalOverflow=HorizontalWrapMode.Wrap;t.verticalOverflow=VerticalWrapMode.Truncate;return t;
+        var t=g.GetComponent<Text>();t.text=value;t.font=font;t.fontSize=size;t.color=color;t.alignment=anchor;t.fontStyle=style;t.horizontalOverflow=HorizontalWrapMode.Wrap;t.verticalOverflow=VerticalWrapMode.Truncate;t.raycastTarget=false;return t;
     }
 
     void StartGame()
