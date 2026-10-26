@@ -12,10 +12,18 @@ func _ready() -> void:
     var env := $WorldEnvironment.environment
     env.background_color = Color(0.035, 0.045, 0.065)
     env.ambient_light_color = Color(0.38, 0.42, 0.52)
-    env.ambient_light_energy = 0.55
-    $Sun.light_energy = 1.25
+    env.ambient_light_energy = 0.42
+    env.fog_enabled = true
+    env.fog_light_color = Color(0.12, 0.14, 0.19)
+    env.fog_density = 0.008
+    env.glow_enabled = true
+    env.glow_intensity = 0.55
+    env.glow_strength = 0.7
+    env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+    $Sun.light_color = Color(0.72, 0.70, 0.78)
+    $Sun.light_energy = 0.82
     var ground_material := StandardMaterial3D.new()
-    ground_material.albedo_color = Color(0.16, 0.20, 0.17)
+    ground_material.albedo_color = Color(0.105, 0.115, 0.105)
     ground_material.roughness = 1.0
     $Ground/GroundMesh.material_override = ground_material
     var ground_shape := BoxShape3D.new()
@@ -51,12 +59,12 @@ func _build_world() -> void:
         if Vector2(x, z).length() < 9.0 or (x < -27.0 and x > -42.0):
             continue
         _make_tree(Vector3(x, 0, z), rng.randf_range(0.75, 1.55), rng)
-    for i in range(58):
+    for i in range(110):
         var x := rng.randf_range(-82, 82)
         var z := rng.randf_range(-82, 82)
-        if Vector2(x, z).length() < 15.0:
+        if Vector2(x, z).length() < 13.0:
             continue
-        _make_rock(Vector3(x, 0, z), rng.randf_range(0.7, 2.6), rng.randf_range(0.7, 3.5))
+        _make_rock(Vector3(x, 0, z), rng.randf_range(0.35, 1.8), rng.randf_range(0.45, 2.2))
     # Jagged mountain ring on the far horizon.
     for i in range(34):
         var angle := TAU * float(i) / 34.0
@@ -64,9 +72,59 @@ func _build_world() -> void:
         var height := rng.randf_range(10.0, 22.0)
         _make_mountain(Vector3(cos(angle) * distance, height * 0.35, sin(angle) * distance), height, rng.randf_range(7.0, 13.0))
     _make_ruin(Vector3(25, 0, -35))
+    _make_ruin(Vector3(-57, 0, -28))
     _make_cave_entrance(Vector3(-45, 0, 38), "Пещера Чёрного Эха")
     _make_cave_entrance(Vector3(56, 0, 24), "Склеп Пепельного Короля")
-    _add_box_visual("Bonfire", Vector3(0.5, 0.8, 0.5), Vector3(2, 0.5, 2), Color(1.0, 0.28, 0.05), 0.0)
+    _make_bonfire(Vector3(2, 0, 2))
+
+
+func _make_bonfire(pos: Vector3) -> void:
+    var base := MeshInstance3D.new()
+    var base_mesh := CylinderMesh.new()
+    base_mesh.top_radius = 0.55
+    base_mesh.bottom_radius = 0.72
+    base_mesh.height = 0.25
+    base.mesh = base_mesh
+    base.position = pos + Vector3(0, 0.12, 0)
+    base.material_override = _simple_material(Color(0.12, 0.10, 0.09))
+    add_child(base)
+    for i in range(3):
+        var log := MeshInstance3D.new()
+        var log_mesh := CylinderMesh.new()
+        log_mesh.top_radius = 0.10
+        log_mesh.bottom_radius = 0.13
+        log_mesh.height = 1.0
+        log.mesh = log_mesh
+        log.position = pos + Vector3(0, 0.32, 0)
+        log.rotation.z = PI * 0.5
+        log.rotation.y = float(i) * PI / 3.0
+        log.material_override = _simple_material(Color(0.20, 0.095, 0.045))
+        add_child(log)
+    var flame := MeshInstance3D.new()
+    var flame_mesh := SphereMesh.new()
+    flame_mesh.radius = 0.42
+    flame_mesh.height = 1.25
+    flame.mesh = flame_mesh
+    flame.position = pos + Vector3(0, 0.88, 0)
+    flame.scale = Vector3(0.65, 1.0, 0.65)
+    flame.material_override = _simple_material(Color(1.0, 0.22, 0.025), true)
+    add_child(flame)
+    var light := OmniLight3D.new()
+    light.position = pos + Vector3(0, 1.3, 0)
+    light.light_color = Color(1.0, 0.28, 0.07)
+    light.light_energy = 2.2
+    light.omni_range = 11.0
+    add_child(light)
+
+func _simple_material(color: Color, emissive: bool = false) -> StandardMaterial3D:
+    var mat := StandardMaterial3D.new()
+    mat.albedo_color = color
+    mat.roughness = 0.9
+    if emissive:
+        mat.emission_enabled = true
+        mat.emission = color
+        mat.emission_energy_multiplier = 2.0
+    return mat
 
 func _add_box_visual(node_name: String, size: Vector3, pos: Vector3, color: Color, rotation_y: float) -> void:
     var visual := MeshInstance3D.new()
