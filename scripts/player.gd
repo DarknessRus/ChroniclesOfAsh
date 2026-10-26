@@ -1,6 +1,6 @@
 extends CharacterBody3D
 
-@export var move_speed: float = 5.0
+@export var move_speed: float = 6.0
 var health: int = 100
 var experience: int = 0
 var level: int = 1
@@ -9,24 +9,23 @@ var touch_up := false
 var touch_down := false
 var touch_left := false
 var touch_right := false
-
+var class_id := "warrior"
+var class_title := "Воин с топором"
+var skeleton_summons: Array[Node3D] = []
+var attack_serial := 0
 @onready var body_mesh: MeshInstance3D = $Body
 
 func _ready() -> void:
-    var sphere := SphereMesh.new()
-    sphere.radius = 0.55
-    sphere.height = 1.4
-    body_mesh.mesh = sphere
-    var collision := CollisionShape3D.new()
-    var capsule := CapsuleShape3D.new()
-    capsule.radius = 0.45
-    capsule.height = 1.5
-    collision.shape = capsule
-    add_child(collision)
-    var material := StandardMaterial3D.new()
-    material.albedo_color = Color(0.95, 0.56, 0.20)
-    material.roughness = 0.9
-    body_mesh.material_override = material
+    _build_character()
+    var collision := get_node_or_null("CollisionShape3D")
+    if collision == null:
+        collision = CollisionShape3D.new()
+        collision.name = "CollisionShape3D"
+        var capsule := CapsuleShape3D.new()
+        capsule.radius = 0.45
+        capsule.height = 1.5
+        collision.shape = capsule
+        add_child(collision)
     var hud = get_parent().get_node_or_null("HUD")
     if hud:
         var attack_button = hud.get_node_or_null("AttackButton")
@@ -36,6 +35,60 @@ func _ready() -> void:
         _connect_direction_button(hud, "DownButton", "down")
         _connect_direction_button(hud, "LeftButton", "left")
         _connect_direction_button(hud, "RightButton", "right")
+
+func set_class(next_class: String) -> void:
+    class_id = next_class
+    match class_id:
+        "mage": class_title = "Маг с посохом"
+        "ranger": class_title = "Эльф-лучник"
+        "necromancer": class_title = "Некромант"
+        _: class_id = "warrior"; class_title = "Воин с топором"
+    _build_character()
+
+func _build_character() -> void:
+    if body_mesh == null:
+        return
+    var mat := StandardMaterial3D.new()
+    mat.roughness = 0.78
+    match class_id:
+        "mage": mat.albedo_color = Color(0.20, 0.42, 0.95)
+        "ranger": mat.albedo_color = Color(0.20, 0.62, 0.30)
+        "necromancer": mat.albedo_color = Color(0.46, 0.24, 0.62)
+        _: mat.albedo_color = Color(0.82, 0.28, 0.12)
+    var capsule_mesh := CapsuleMesh.new()
+    capsule_mesh.radius = 0.48
+    capsule_mesh.height = 1.55
+    body_mesh.mesh = capsule_mesh
+    body_mesh.material_override = mat
+    # Class-specific silhouette: weapon/tool meshes are simple readable placeholders.
+    var old_weapon := get_node_or_null("ClassWeapon")
+    if old_weapon:
+        old_weapon.queue_free()
+    var weapon := MeshInstance3D.new()
+    weapon.name = "ClassWeapon"
+    var weapon_mat := StandardMaterial3D.new()
+    weapon_mat.albedo_color = Color(0.66, 0.67, 0.72)
+    if class_id == "necromancer":
+        weapon_mat.albedo_color = Color(0.32, 0.95, 0.54)
+        weapon_mat.emission_enabled = true
+        weapon_mat.emission = Color(0.1, 0.65, 0.25)
+    if class_id == "mage":
+        weapon_mat.albedo_color = Color(0.35, 0.8, 1.0)
+        weapon_mat.emission_enabled = true
+        weapon_mat.emission = Color(0.1, 0.4, 1.0)
+    if class_id == "ranger":
+        var bow := TorusMesh.new()
+        bow.inner_radius = 0.12
+        bow.outer_radius = 0.18
+        weapon.mesh = bow
+    else:
+        var weapon_mesh := BoxMesh.new()
+        weapon_mesh.size = Vector3(0.18, 0.85, 0.18)
+        weapon.mesh = weapon_mesh
+    weapon.position = Vector3(0.55, 0.25, -0.1)
+    weapon.rotation.z = 0.35
+    weapon.material_override = weapon_mat
+    add_child(weapon)
 
 func _connect_direction_button(hud: Node, button_name: String, direction: String) -> void:
     var button = hud.get_node_or_null(button_name)
@@ -76,14 +129,70 @@ func attack() -> void:
     if attack_cooldown > 0.0:
         return
     attack_cooldown = 0.55
-    var enemy = get_parent().get_node_or_null("Enemy")
-    if enemy and not enemy.is_queued_for_deletion() and global_position.distance_to(enemy.global_position) < 2.5:
-        var was_alive: bool = enemy.health > 0
-        enemy.take_damage(25)
-        if was_alive and enemy.health <= 0:
+    var world := get_parent()
+    var nearest: Node3D = null
+    var nearest_distance := 9999.0
+    for child in world.get_children():
+        if child is Node3D and child.has_method("take_damage") and child != self and not child.is_queued_for_deletion():
+            var distance := global_position.distance_to(child.global_position)
+            if distance < nearest_distance:
+                nearest = child
+                nearest_distance = distance
+    var range := 2.8
+    var damage := 28
+    if class_id == "mage": range = 13.0; damage = 24
+    elif class_id == "ranger": range = 16.0; damage = 22
+    elif class_id == "necromancer": range = 9.0; damage = 18
+    if nearest != null and nearest_distance <= range:
+        if class_id == "mage" or class_id == "ranger":
+            _spawn_projectile(nearest.global_position, class_id)
+        nearest.take_damage(damage)
+        if nearest.has_method("is_dead") and nearest.is_dead():
+            pass
+        if class_id == "necromancer":
+            _summon_skeleton(nearest.global_position)
+        if nearest.health <= 0:
             experience += 25
             if experience >= level * 50:
                 experience -= level * 50
                 level += 1
-            get_parent().update_status(level, health, experience)
-            get_parent().on_enemy_defeated("slime")
+            world.update_status(level, health, experience)
+            world.on_enemy_defeated(str(nearest.get("enemy_type")))
+    elif class_id == "necromancer" and skeleton_summons.is_empty():
+        _summon_skeleton(global_position + Vector3(1.5, 0, 1.5))
+
+func _spawn_projectile(target: Vector3, type: String) -> void:
+    var orb := MeshInstance3D.new()
+    var sphere := SphereMesh.new()
+    sphere.radius = 0.25 if type == "mage" else 0.13
+    sphere.height = sphere.radius * 2.0
+    orb.mesh = sphere
+    orb.position = global_position + Vector3(0, 0.8, 0)
+    var mat := StandardMaterial3D.new()
+    mat.albedo_color = Color(0.2, 0.65, 1.0) if type == "mage" else Color(0.65, 0.9, 0.3)
+    mat.emission_enabled = true
+    mat.emission = mat.albedo_color
+    orb.material_override = mat
+    get_parent().add_child(orb)
+    var tween := create_tween()
+    tween.tween_property(orb, "global_position", target + Vector3(0, 0.6, 0), 0.18)
+    tween.tween_callback(orb.queue_free)
+
+func _summon_skeleton(pos: Vector3) -> void:
+    skeleton_summons = skeleton_summons.filter(func(s): return is_instance_valid(s))
+    if skeleton_summons.size() >= 3:
+        return
+    var skeleton := MeshInstance3D.new()
+    var mesh := CapsuleMesh.new()
+    mesh.radius = 0.28
+    mesh.height = 1.0
+    skeleton.mesh = mesh
+    skeleton.position = pos + Vector3(randf_range(-1.5, 1.5), 0.7, randf_range(-1.5, 1.5))
+    var mat := StandardMaterial3D.new()
+    mat.albedo_color = Color(0.82, 0.86, 0.78)
+    mat.emission_enabled = true
+    mat.emission = Color(0.08, 0.3, 0.12)
+    skeleton.material_override = mat
+    skeleton.name = "SummonedSkeleton"
+    get_parent().add_child(skeleton)
+    skeleton_summons.append(skeleton)
