@@ -161,6 +161,7 @@ public class AshBootstrap : MonoBehaviour
             if (worldRoot != null) Destroy(worldRoot);
             worldRoot = new GameObject("Ash Valley World");
             BuildWorld(worldRoot.transform);
+            AshOpenWorld.Build(worldRoot.transform);
             AshArtExpansion.Build(worldRoot.transform);
             AshWorldUpgrade.BuildCastleAndValley(worldRoot.transform);
             worldRoot.AddComponent<AshAIQuestDirector>();
