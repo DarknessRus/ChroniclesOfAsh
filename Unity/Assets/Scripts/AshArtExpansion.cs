@@ -27,9 +27,17 @@ public static class AshArtExpansion
         var go = GameObject.CreatePrimitive(type);
         go.name = name;
         go.transform.SetParent(parent, true);
-        go.transform.position = position;
+        // Character armor uses coordinates relative to the character origin; world decorations
+        // remain positioned in world space. Without this, armor appears below the character.
+        bool attachedActor = parent != null &&
+            (parent.GetComponent<CharacterController>() != null || parent.GetComponent<AshEnemy>() != null);
+        go.transform.position = attachedActor ? parent.TransformPoint(position) : position;
         go.transform.localScale = scale;
-        if (rotation.HasValue) go.transform.rotation = Quaternion.Euler(rotation.Value);
+        if (rotation.HasValue)
+        {
+            if (attachedActor) go.transform.localRotation = Quaternion.Euler(rotation.Value);
+            else go.transform.rotation = Quaternion.Euler(rotation.Value);
+        }
         var renderer = go.GetComponent<Renderer>();
         if (renderer != null) renderer.sharedMaterial = Make(color, 0.72f, glow);
         // Decorative armor pieces must not add dozens of overlapping colliders to the mobile player.
