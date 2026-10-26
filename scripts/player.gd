@@ -50,47 +50,136 @@ func set_class(next_class: String) -> void:
 func _build_character() -> void:
     if body_mesh == null:
         return
-    var mat := StandardMaterial3D.new()
-    mat.roughness = 0.78
+    var old_art := get_node_or_null("CharacterArt")
+    if old_art:
+        old_art.queue_free()
+    var art := Node3D.new()
+    art.name = "CharacterArt"
+    add_child(art)
+    body_mesh.visible = false
+    var armor := Color(0.34,0.30,0.28)
+    var cloth := Color(0.14,0.12,0.13)
+    var accent := Color(0.95,0.28,0.06)
     match class_id:
-        "mage": mat.albedo_color = Color(0.20, 0.42, 0.95)
-        "ranger": mat.albedo_color = Color(0.20, 0.62, 0.30)
-        "necromancer": mat.albedo_color = Color(0.46, 0.24, 0.62)
-        _: mat.albedo_color = Color(0.82, 0.28, 0.12)
-    var capsule_mesh := CapsuleMesh.new()
-    capsule_mesh.radius = 0.48
-    capsule_mesh.height = 1.55
-    body_mesh.mesh = capsule_mesh
-    body_mesh.material_override = mat
-    # Class-specific silhouette: weapon/tool meshes are simple readable placeholders.
-    var old_weapon := get_node_or_null("ClassWeapon")
-    if old_weapon:
-        old_weapon.queue_free()
-    var weapon := MeshInstance3D.new()
-    weapon.name = "ClassWeapon"
-    var weapon_mat := StandardMaterial3D.new()
-    weapon_mat.albedo_color = Color(0.66, 0.67, 0.72)
-    if class_id == "necromancer":
-        weapon_mat.albedo_color = Color(0.32, 0.95, 0.54)
-        weapon_mat.emission_enabled = true
-        weapon_mat.emission = Color(0.1, 0.65, 0.25)
-    if class_id == "mage":
-        weapon_mat.albedo_color = Color(0.35, 0.8, 1.0)
-        weapon_mat.emission_enabled = true
-        weapon_mat.emission = Color(0.1, 0.4, 1.0)
-    if class_id == "ranger":
-        var bow := TorusMesh.new()
-        bow.inner_radius = 0.12
-        bow.outer_radius = 0.18
-        weapon.mesh = bow
+        "mage":
+            armor = Color(0.13,0.22,0.46); cloth = Color(0.06,0.08,0.18); accent = Color(0.18,0.68,1.0)
+        "ranger":
+            armor = Color(0.20,0.34,0.22); cloth = Color(0.10,0.18,0.12); accent = Color(0.72,0.84,0.42)
+        "necromancer":
+            armor = Color(0.27,0.18,0.34); cloth = Color(0.10,0.07,0.15); accent = Color(0.15,1.0,0.40)
+        _:
+            armor = Color(0.38,0.29,0.23); cloth = Color(0.17,0.11,0.09); accent = Color(0.95,0.28,0.06)
+    _part_box(art,"Torso",Vector3(0.58,0.68,0.34),Vector3(0,1.12,0),armor)
+    _part_box(art,"Breastplate",Vector3(0.62,0.34,0.39),Vector3(0,1.31,-0.035),armor.lightened(0.12))
+    _part_box(art,"Belt",Vector3(0.61,0.10,0.37),Vector3(0,0.88,0),Color(0.09,0.065,0.045))
+    _part_box(art,"Buckle",Vector3(0.12,0.12,0.06),Vector3(0,0.88,-0.22),accent)
+    _part_sphere(art,"Head",Vector3(0.34,0.38,0.32),Vector3(0,1.77,0),Color(0.62,0.46,0.34))
+    _part_box(art,"Helmet",Vector3(0.42,0.20,0.38),Vector3(0,1.98,0),armor.darkened(0.2))
+    _part_box(art,"LegL",Vector3(0.23,0.53,0.28),Vector3(-0.18,0.38,0),cloth)
+    _part_box(art,"LegR",Vector3(0.23,0.53,0.28),Vector3(0.18,0.38,0),cloth)
+    _part_box(art,"BootL",Vector3(0.28,0.16,0.38),Vector3(-0.18,0.08,-0.04),Color(0.08,0.065,0.06))
+    _part_box(art,"BootR",Vector3(0.28,0.16,0.38),Vector3(0.18,0.08,-0.04),Color(0.08,0.065,0.06))
+    _part_box(art,"ArmL",Vector3(0.20,0.54,0.22),Vector3(-0.41,1.17,0),armor)
+    _part_box(art,"ArmR",Vector3(0.20,0.54,0.22),Vector3(0.41,1.17,0),armor)
+    _part_box(art,"GloveL",Vector3(0.21,0.18,0.23),Vector3(-0.42,0.88,0),Color(0.11,0.09,0.08))
+    _part_box(art,"GloveR",Vector3(0.21,0.18,0.23),Vector3(0.42,0.88,0),Color(0.11,0.09,0.08))
+    if class_id == "warrior":
+        _part_sphere(art,"ShoulderL",Vector3(0.34,0.30,0.36),Vector3(-0.42,1.48,0),armor.lightened(0.16))
+        _part_sphere(art,"ShoulderR",Vector3(0.34,0.30,0.36),Vector3(0.42,1.48,0),armor.lightened(0.16))
+        _part_box(art,"HelmetRidge",Vector3(0.08,0.28,0.44),Vector3(0,2.12,0),Color(0.68,0.56,0.38))
+    elif class_id == "mage":
+        _part_box(art,"Robe",Vector3(0.73,0.75,0.43),Vector3(0,0.98,0.04),cloth)
+        _part_box(art,"RobeTrim",Vector3(0.76,0.07,0.45),Vector3(0,0.66,0.04),accent)
+        _part_box(art,"HatBrim",Vector3(0.65,0.08,0.60),Vector3(0,2.08,0),cloth)
+        _part_cone(art,"WizardHat",0.22,0.55,Vector3(0,2.36,0),cloth)
+    elif class_id == "ranger":
+        _part_box(art,"Hood",Vector3(0.47,0.27,0.42),Vector3(0,2.02,0.02),cloth)
+        _part_box(art,"ElfEarL",Vector3(0.22,0.07,0.08),Vector3(-0.27,1.80,0),Color(0.65,0.49,0.36),Vector3(0,0,-0.30))
+        _part_box(art,"ElfEarR",Vector3(0.22,0.07,0.08),Vector3(0.27,1.80,0),Color(0.65,0.49,0.36),Vector3(0,0,0.30))
+        _part_box(art,"Quiver",Vector3(0.20,0.48,0.16),Vector3(-0.30,1.40,0.18),Color(0.35,0.20,0.10),Vector3(0,0,-0.18))
     else:
-        var weapon_mesh := BoxMesh.new()
-        weapon_mesh.size = Vector3(0.18, 0.85, 0.18)
-        weapon.mesh = weapon_mesh
-    weapon.position = Vector3(0.55, 0.25, -0.1)
-    weapon.rotation.z = 0.35
-    weapon.material_override = weapon_mat
-    add_child(weapon)
+        _part_box(art,"Hood",Vector3(0.49,0.34,0.43),Vector3(0,2.02,0.02),cloth)
+        _part_sphere(art,"SoulGem",Vector3(0.14,0.14,0.08),Vector3(0,1.39,-0.23),accent,true)
+        _part_box(art,"BoneShoulderL",Vector3(0.31,0.28,0.34),Vector3(-0.42,1.48,0),Color(0.65,0.62,0.52))
+    var weapon := Node3D.new()
+    weapon.name = "ClassWeapon"
+    weapon.position = Vector3(0.58,1.03,-0.12)
+    weapon.rotation.z = -0.22
+    art.add_child(weapon)
+    if class_id == "warrior":
+        _part_cylinder(weapon,"AxeHandle",0.045,0.045,1.0,Vector3(0,0.22,0),Color(0.25,0.13,0.07))
+        _part_box(weapon,"AxeBlade",Vector3(0.42,0.36,0.12),Vector3(-0.18,0.65,0),Color(0.65,0.68,0.71),Vector3(0,0,-0.12))
+        _part_box(weapon,"AxeEdge",Vector3(0.05,0.31,0.14),Vector3(-0.37,0.65,0),Color(0.88,0.88,0.84))
+    elif class_id == "mage":
+        _part_cylinder(weapon,"Staff",0.035,0.055,1.45,Vector3(0,0.20,0),Color(0.28,0.17,0.10))
+        _part_sphere(weapon,"StaffCrystal",Vector3(0.22,0.24,0.22),Vector3(0,0.96,0),accent,true)
+        _part_box(weapon,"CrystalBand",Vector3(0.30,0.06,0.30),Vector3(0,0.83,0),Color(0.72,0.65,0.42))
+    elif class_id == "ranger":
+        _part_cylinder(weapon,"BowGrip",0.035,0.035,0.72,Vector3(0,0.20,0),Color(0.40,0.25,0.12))
+        _part_box(weapon,"BowUpper",Vector3(0.09,0.38,0.09),Vector3(0,0.60,0),Color(0.48,0.31,0.15),Vector3(0,0,-0.28))
+        _part_box(weapon,"BowLower",Vector3(0.09,0.38,0.09),Vector3(0,-0.20,0),Color(0.48,0.31,0.15),Vector3(0,0,0.28))
+        _part_cylinder(weapon,"Arrow",0.018,0.018,0.80,Vector3(0.08,0.20,-0.05),Color(0.82,0.78,0.66))
+    else:
+        _part_cylinder(weapon,"BoneStaff",0.04,0.06,1.4,Vector3(0,0.20,0),Color(0.72,0.69,0.59))
+        _part_sphere(weapon,"SoulOrb",Vector3(0.25,0.25,0.25),Vector3(0,0.92,0),accent,true)
+        _part_box(weapon,"SkullMark",Vector3(0.16,0.13,0.12),Vector3(0,0.66,-0.02),Color(0.85,0.83,0.73))
+
+func _material(color: Color, emissive: bool = false) -> StandardMaterial3D:
+    var mat := StandardMaterial3D.new()
+    mat.albedo_color = color
+    mat.roughness = 0.72
+    if emissive:
+        mat.emission_enabled = true
+        mat.emission = color
+        mat.emission_energy_multiplier = 1.5
+    return mat
+
+func _part_box(parent: Node3D, part_name: String, dimensions: Vector3, pos: Vector3, color: Color, rot: Vector3 = Vector3.ZERO) -> void:
+    var part := MeshInstance3D.new()
+    part.name = part_name
+    var mesh := BoxMesh.new()
+    mesh.size = dimensions
+    part.mesh = mesh
+    part.position = pos
+    part.rotation = rot
+    part.material_override = _material(color)
+    parent.add_child(part)
+
+func _part_sphere(parent: Node3D, part_name: String, dimensions: Vector3, pos: Vector3, color: Color, emissive: bool = false) -> void:
+    var part := MeshInstance3D.new()
+    part.name = part_name
+    var mesh := SphereMesh.new()
+    mesh.radius = 0.5
+    mesh.height = 1.0
+    part.mesh = mesh
+    part.scale = dimensions
+    part.position = pos
+    part.material_override = _material(color, emissive)
+    parent.add_child(part)
+
+func _part_cylinder(parent: Node3D, part_name: String, top_radius: float, bottom_radius: float, height: float, pos: Vector3, color: Color) -> void:
+    var part := MeshInstance3D.new()
+    part.name = part_name
+    var mesh := CylinderMesh.new()
+    mesh.top_radius = top_radius
+    mesh.bottom_radius = bottom_radius
+    mesh.height = height
+    part.mesh = mesh
+    part.position = pos
+    part.material_override = _material(color)
+    parent.add_child(part)
+
+func _part_cone(parent: Node3D, part_name: String, radius: float, height: float, pos: Vector3, color: Color) -> void:
+    var part := MeshInstance3D.new()
+    part.name = part_name
+    var mesh := CylinderMesh.new()
+    mesh.top_radius = 0.01
+    mesh.bottom_radius = radius
+    mesh.height = height
+    part.mesh = mesh
+    part.position = pos
+    part.material_override = _material(color)
+    parent.add_child(part)
 
 func _connect_direction_button(hud: Node, button_name: String, direction: String) -> void:
     var button = hud.get_node_or_null(button_name)
