@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using System.Collections;
 
 /// <summary>
 /// Clean entry point for the first playable slice of Chronicles of Ash.
@@ -15,6 +16,7 @@ public sealed class AshBootstrap : MonoBehaviour
     private Font uiFont;
     private int selectedHero;
     private bool starting;
+    private Text loadingLabel;
 
     private readonly string[] heroes = { "ВОИН", "МАГ", "СЛЕДОПЫТ", "НЕКРОМАНТ" };
     private readonly string[] descriptions = {
@@ -99,8 +101,8 @@ public sealed class AshBootstrap : MonoBehaviour
         var startPanel = Panel(menuRoot.transform, new Vector2(.69f, .16f), new Vector2(.95f, .29f), new Color(.58f, .24f, .07f));
         var startButton = startPanel.gameObject.AddComponent<Button>();
         startButton.targetGraphic = startPanel.GetComponent<Image>();
-        Label(startPanel.transform, "НАЧАТЬ ПУТЬ  ▶", 28, Vector2.zero, Vector2.one, new Color(1f, .91f, .72f), FontStyle.Bold);
-        startButton.onClick.AddListener(StartGame);
+        Label(startPanel.transform, "НАЧАТЬ ИГРУ  ▶", 28, Vector2.zero, Vector2.one, new Color(1f, .91f, .72f), FontStyle.Bold);
+        startButton.onClick.AddListener(() => { Debug.Log("[Chronicles of Ash] Start button clicked."); StartGame(); });
 
         Label(menuRoot.transform, "ANDROID  •  ТЁМНОЕ ФЭНТЕЗИ  •  ОДИНОЧНАЯ ИГРА", 15,
             new Vector2(.05f, .065f), new Vector2(.65f, .12f), new Color(.43f, .46f, .46f), FontStyle.Normal);
@@ -111,22 +113,42 @@ public sealed class AshBootstrap : MonoBehaviour
         if (starting) return;
         starting = true;
         Debug.Log("[Chronicles of Ash] Start requested.");
+        if (menuRoot != null) menuRoot.SetActive(false);
+        var loadingPanel = Panel(canvas.transform, Vector2.zero, Vector2.one, new Color(.025f, .03f, .035f, .96f));
+        loadingPanel.name = "World Loading Screen";
+        Label(loadingPanel.transform, "ПРОБУЖДЕНИЕ ДОЛИНЫ ПЕПЛА…", 34,
+            new Vector2(.12f, .38f), new Vector2(.88f, .62f), new Color(.93f, .61f, .24f), FontStyle.Bold);
+        StartCoroutine(BuildWorldRoutine(loadingPanel));
+    }
+
+    private IEnumerator BuildWorldRoutine(GameObject loadingPanel)
+    {
+        // Render loading feedback before generating the procedural environment.
+        yield return null;
+        yield return new WaitForEndOfFrame();
+        GameObject candidate = null;
         try
         {
-            var candidate = new GameObject("Ash Valley World");
+            // Avoid two active gameplay cameras if a scene already contains one.
+            foreach (var oldCamera in FindObjectsOfType<Camera>())
+                if (oldCamera != null && oldCamera.gameObject.name != "UI Camera")
+                    Destroy(oldCamera.gameObject);
+
+            candidate = new GameObject("Ash Valley World");
             AshDiabloWorldBuilder.Build(candidate.transform, selectedHero);
             worldRoot = candidate;
-            if (menuRoot != null) menuRoot.SetActive(false);
+            if (loadingPanel != null) Destroy(loadingPanel);
             Debug.Log("[Chronicles of Ash] Playable world created.");
         }
         catch (System.Exception exception)
         {
             Debug.LogError("[Chronicles of Ash] World creation failed: " + exception);
-            if (worldRoot != null) Destroy(worldRoot);
+            if (candidate != null) Destroy(candidate);
             worldRoot = null;
+            if (loadingPanel != null) Destroy(loadingPanel);
             starting = false;
             ShowMainMenu();
-            return;
+            yield break;
         }
         starting = false;
     }
