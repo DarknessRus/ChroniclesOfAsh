@@ -95,6 +95,19 @@ jobs:
             echo "::warning::The public CC0 character pack could not be downloaded; continuing with built-in fallback art."
           fi
 
+      - name: Download free CC0 nature models
+        shell: bash
+        run: |
+          set -eux
+          mkdir -p assets/free/nature
+          curl --fail --location --retry 3 --retry-delay 2 \
+            "https://store.godotengine.org/asset/quaternius/stylized-nature-megakit/download/31/" \
+            --output /tmp/stylized-nature.zip
+          unzip -oq /tmp/stylized-nature.zip -d assets/free/nature
+          echo "Nature asset inventory:"
+          find assets/free/nature -type f \( -iname '*.glb' -o -iname '*.gltf' -o -iname '*.fbx' -o -iname '*.obj' \) | head -100
+          test "$(find assets/free/nature -type f \( -iname '*.glb' -o -iname '*.gltf' -o -iname '*.fbx' -o -iname '*.obj' \) | wc -l)" -gt 0
+
       - name: Import and validate Godot project
         run: godot --headless --editor --path . --quit
 
