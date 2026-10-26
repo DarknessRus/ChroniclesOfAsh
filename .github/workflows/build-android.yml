@@ -53,6 +53,8 @@ jobs:
           [resource]
           export/android/java_sdk_path = "$JAVA_HOME_DIR"
           export/android/android_sdk_path = "/usr/lib/android-sdk"
+          export/android/ndk_path = "/usr/lib/android-sdk/ndk/23.2.8568313"
+          export/android/cmake_path = "/usr/lib/android-sdk/cmake/3.10.2.4988404"
           export/android/debug_keystore = "$HOME/.android/debug.keystore"
           export/android/debug_keystore_user = "androiddebugkey"
           export/android/debug_keystore_pass = "android"
