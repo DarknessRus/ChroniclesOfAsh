@@ -78,6 +78,11 @@ jobs:
           test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_release.apk"
           cat export_presets.cfg
 
+      - name: Set up Python for asset downloader
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Download free CC0 fantasy character assets
         shell: bash
         run: |
