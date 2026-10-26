@@ -12,23 +12,56 @@ jobs:
   export-apk:
     runs-on: ubuntu-latest
     container:
-      # The published barichello/godot-ci tag for Godot 4.3 is "4.3".
       image: barichello/godot-ci:4.3
     steps:
       - name: Checkout project
         uses: actions/checkout@v4
-      - name: Check Godot and Android export templates
+
+      - name: Configure Android export environment
+        shell: bash
         run: |
+          set -eux
           godot --version
-          test -f /root/.local/share/godot/export_templates/4.3.stable/android_debug.apk
-          test -f /root/.local/share/godot/export_templates/4.3.stable/android_release.apk
+
+          # The container stores templates under /root, while Actions sets HOME=/github/home.
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.3.stable"
+          cp /root/.local/share/godot/export_templates/4.3.stable/android_debug.apk "$HOME/.local/share/godot/export_templates/4.3.stable/"
+          cp /root/.local/share/godot/export_templates/4.3.stable/android_release.apk "$HOME/.local/share/godot/export_templates/4.3.stable/"
+
+          JAVA_BIN="$(command -v javac)"
+          JAVA_HOME_DIR="$(dirname "$(dirname "$(readlink -f "$JAVA_BIN")")")"
+          test -x "$JAVA_HOME_DIR/bin/java"
+
+          mkdir -p "$HOME/.android" "$HOME/.config/godot"
+          keytool -genkeypair -v \
+            -keystore "$HOME/.android/debug.keystore" \
+            -storepass android -alias androiddebugkey -keypass android \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -keyalg RSA -keysize 2048 -validity 10000
+
+          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/java_sdk_path = "$JAVA_HOME_DIR"
+          export/android/debug_keystore = "$HOME/.android/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          EOF
+
+          test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_debug.apk"
+          test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_release.apk"
+
       - name: Import and validate Godot project
         run: godot --headless --editor --path . --quit
+
       - name: Export Android APK
         run: |
+          set -eux
           mkdir -p build
           godot --headless --path . --export-debug "Android" build/ChroniclesOfAsh.apk
           test -s build/ChroniclesOfAsh.apk
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
