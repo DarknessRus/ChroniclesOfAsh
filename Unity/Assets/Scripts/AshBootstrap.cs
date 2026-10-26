@@ -148,7 +148,7 @@ public class AshBootstrap : MonoBehaviour
         for(int i=0;i<7;i++){var stone=GameObject.CreatePrimitive(PrimitiveType.Cube);stone.name="Old stone bridge";stone.transform.SetParent(root);stone.transform.position=new Vector3(0,.18f,2+i*.85f);stone.transform.localScale=new Vector3(4.8f,.35f,.75f);stone.GetComponent<Renderer>().material=Mat(new Color(.34f,.34f,.31f),.95f);}
         // Distant gothic keep.
         var keep=GameObject.CreatePrimitive(PrimitiveType.Cube);keep.name="Ashen castle";keep.transform.SetParent(root);keep.transform.position=new Vector3(0,7,48);keep.transform.localScale=new Vector3(13,14,7);keep.GetComponent<Renderer>().material=Mat(new Color(.17f,.18f,.19f),.95f);
-        for(int i=0;i<4;i++){var tower=GameObject.CreatePrimitive(PrimitiveType.Cylinder);tower.transform.SetParent(root);tower.transform.position=new Vector3(-5+i*3.3f,12,48);tower.transform.localScale=new Vector3(1.4f,4,1.4f);tower.GetComponent<Renderer>().material=Mat(new Color(.13f,.14f,.16f),.95f);var roof=GameObject.CreatePrimitive(PrimitiveType.Cone);roof.transform.SetParent(root);roof.transform.position=new Vector3(-5+i*3.3f,17,48);roof.transform.localScale=new Vector3(2,4,2);roof.GetComponent<Renderer>().material=Mat(new Color(.10f,.11f,.13f),.95f);}
+        for(int i=0;i<4;i++){var tower=GameObject.CreatePrimitive(PrimitiveType.Cylinder);tower.transform.SetParent(root);tower.transform.position=new Vector3(-5+i*3.3f,12,48);tower.transform.localScale=new Vector3(1.4f,4,1.4f);tower.GetComponent<Renderer>().material=Mat(new Color(.13f,.14f,.16f),.95f);var roof=CreateCone(root,new Vector3(-5+i*3.3f,17,48),new Vector3(2,4,2));roof.GetComponent<Renderer>().material=Mat(new Color(.10f,.11f,.13f),.95f);}
         // Campfire and canvas tent.
         var fire=GameObject.CreatePrimitive(PrimitiveType.Sphere);fire.name="Campfire ember";fire.transform.SetParent(root);fire.transform.position=new Vector3(-5,.6f,-2);fire.transform.localScale=new Vector3(.5f,.9f,.5f);fire.GetComponent<Renderer>().material=Mat(new Color(1f,.28f,.035f),.35f);
         var flame=fire.AddComponent<Light>();flame.type=LightType.Point;flame.range=12;flame.intensity=3;flame.color=new Color(1f,.28f,.07f);
@@ -157,7 +157,17 @@ public class AshBootstrap : MonoBehaviour
     void CreateTree(Transform root,Vector3 pos,float scale)
     {
         var trunk=GameObject.CreatePrimitive(PrimitiveType.Cylinder);trunk.name="Pine trunk";trunk.transform.SetParent(root);trunk.transform.position=pos+Vector3.up*scale*.65f;trunk.transform.localScale=new Vector3(.22f,scale*.75f,.22f);trunk.GetComponent<Renderer>().material=Mat(new Color(.22f,.16f,.12f),1);
-        for(int k=0;k<3;k++){var crown=GameObject.CreatePrimitive(PrimitiveType.Cone);crown.transform.SetParent(root);crown.transform.position=pos+Vector3.up*(scale*(1.0f+k*.48f));crown.transform.localScale=new Vector3(scale*(1.1f-k*.15f),scale*.8f,scale*(1.1f-k*.15f));crown.GetComponent<Renderer>().material=Mat(new Color(.09f,.20f,.16f),.95f);}
+        for(int k=0;k<3;k++){var crown=CreateCone(root,pos+Vector3.up*(scale*(1.0f+k*.48f)),new Vector3(scale*(1.1f-k*.15f),scale*.8f,scale*(1.1f-k*.15f)));crown.GetComponent<Renderer>().material=Mat(new Color(.09f,.20f,.16f),.95f);}
+    }
+    GameObject CreateCone(Transform parent,Vector3 position,Vector3 scale)
+    {
+        var go=new GameObject("Conical mesh"); go.transform.SetParent(parent); go.transform.position=position; go.transform.localScale=scale;
+        const int segments=16; var mesh=new Mesh(); var vertices=new Vector3[segments+2]; var triangles=new int[segments*6];
+        vertices[0]=new Vector3(0,.5f,0); vertices[1]=new Vector3(0,-.5f,0);
+        for(int i=0;i<segments;i++){float a=2*Mathf.PI*i/segments;vertices[i+2]=new Vector3(Mathf.Cos(a)*.5f,-.5f,Mathf.Sin(a)*.5f);}
+        for(int i=0;i<segments;i++){int n=(i+1)%segments;int t=i*6;triangles[t]=0;triangles[t+1]=i+2;triangles[t+2]=n+2;triangles[t+3]=1;triangles[t+4]=n+2;triangles[t+5]=i+2;}
+        mesh.vertices=vertices;mesh.triangles=triangles;mesh.RecalculateNormals();
+        go.AddComponent<MeshFilter>().sharedMesh=mesh; go.AddComponent<MeshRenderer>(); return go;
     }
     Material Mat(Color c,float smooth)
     {
