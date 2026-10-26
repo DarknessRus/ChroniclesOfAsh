@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 /// <summary>
 /// Builds the actual traversable Ash Valley landscape at runtime: rolling terrain,
@@ -7,6 +8,7 @@ using UnityEngine;
 /// </summary>
 public static class AshOpenWorld
 {
+    static readonly Dictionary<Color, Material> materialCache = new Dictionary<Color, Material>();
     const int Grid = 100;
     const float WorldSize = 260f;
 
@@ -154,9 +156,14 @@ public static class AshOpenWorld
 
     static Material MaterialFor(Color color)
     {
-        var m = new Material(Shader.Find("Standard"));
-        m.color = color;
-        m.SetFloat("_Glossiness", .12f);
-        return m;
+        Material material;
+        if (materialCache.TryGetValue(color, out material) && material != null)
+            return material;
+
+        material = new Material(Shader.Find("Standard"));
+        material.color = color;
+        material.SetFloat("_Glossiness", .12f);
+        materialCache[color] = material;
+        return material;
     }
 }
