@@ -1,0 +1,8 @@
+{
+  "name": "chronicles-of-ash-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Secure AI story service for Chronicles of Ash",
+  "engines": { "node": ">=20" },
+  "scripts": { "start": "node server.js" }
+}
