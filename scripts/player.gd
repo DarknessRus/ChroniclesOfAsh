@@ -146,12 +146,10 @@ func attack() -> void:
     if nearest != null and nearest_distance <= range:
         if class_id == "mage" or class_id == "ranger":
             _spawn_projectile(nearest.global_position, class_id)
-        nearest.take_damage(damage)
-        if nearest.has_method("is_dead") and nearest.is_dead():
-            pass
-        if class_id == "necromancer":
-            _summon_skeleton(nearest.global_position)
-        if nearest.health <= 0:
+        nearest.call("take_damage", damage)
+        if int(nearest.get("health")) <= 0:
+            if class_id == "necromancer":
+                _summon_skeleton(nearest.global_position)
             experience += 25
             if experience >= level * 50:
                 experience -= level * 50
@@ -182,17 +180,21 @@ func _summon_skeleton(pos: Vector3) -> void:
     skeleton_summons = skeleton_summons.filter(func(s): return is_instance_valid(s))
     if skeleton_summons.size() >= 3:
         return
-    var skeleton := MeshInstance3D.new()
+    var skeleton := CharacterBody3D.new()
+    skeleton.name = "SummonedSkeleton"
+    skeleton.position = pos + Vector3(randf_range(-1.5, 1.5), 0.7, randf_range(-1.5, 1.5))
+    skeleton.set_script(load("res://scripts/skeleton.gd"))
+    var skeleton_body := MeshInstance3D.new()
+    skeleton_body.name = "Body"
     var mesh := CapsuleMesh.new()
     mesh.radius = 0.28
     mesh.height = 1.0
-    skeleton.mesh = mesh
-    skeleton.position = pos + Vector3(randf_range(-1.5, 1.5), 0.7, randf_range(-1.5, 1.5))
+    skeleton_body.mesh = mesh
     var mat := StandardMaterial3D.new()
     mat.albedo_color = Color(0.82, 0.86, 0.78)
     mat.emission_enabled = true
     mat.emission = Color(0.08, 0.3, 0.12)
-    skeleton.material_override = mat
-    skeleton.name = "SummonedSkeleton"
+    skeleton_body.material_override = mat
+    skeleton.add_child(skeleton_body)
     get_parent().add_child(skeleton)
     skeleton_summons.append(skeleton)
