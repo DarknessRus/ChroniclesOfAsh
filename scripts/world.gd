@@ -5,6 +5,9 @@ var ai_story: Node
 var world_seed: int = 0
 var world_size: float = 180.0
 var dungeon_count: int = 0
+var nature_tree_scenes: Array[PackedScene] = []
+var nature_rock_scenes: Array[PackedScene] = []
+var nature_other_scenes: Array[PackedScene] = []
 
 class MinimapArt extends Control:
     func _ready() -> void:
@@ -65,6 +68,7 @@ func _ready() -> void:
     $Ground/GroundCollision.shape = ground_shape
     $Ground/GroundMesh.mesh = _box_mesh(Vector3(world_size, 1.0, world_size))
     $Ground.position.y = -0.5
+    _load_free_nature_assets()
     _build_world()
     _build_class_picker()
     _build_minimap_hud()
@@ -75,6 +79,59 @@ func _ready() -> void:
     ai_story.name = "AIStory"
     add_child(ai_story)
     ai_story.setup(self)
+
+func _load_free_nature_assets() -> void:
+    var files: Array[String] = []
+    _collect_nature_files("res://assets/free/nature", files)
+    files.sort()
+    for path in files:
+        var packed = load(path)
+        if not packed is PackedScene:
+            continue
+        var lower := path.to_lower()
+        if lower.contains("tree") or lower.contains("pine") or lower.contains("fir") or lower.contains("spruce"):
+            nature_tree_scenes.append(packed)
+        elif lower.contains("rock") or lower.contains("stone") or lower.contains("cliff"):
+            nature_rock_scenes.append(packed)
+        else:
+            nature_other_scenes.append(packed)
+    print("Free CC0 nature models loaded: trees=", nature_tree_scenes.size(), " rocks=", nature_rock_scenes.size(), " other=", nature_other_scenes.size())
+
+
+func _collect_nature_files(folder: String, output: Array[String]) -> void:
+    var dir := DirAccess.open(folder)
+    if dir == null:
+        return
+    dir.list_dir_begin()
+    var entry := dir.get_next()
+    while not entry.is_empty():
+        if entry.begins_with("."):
+            entry = dir.get_next()
+            continue
+        var path := folder.path_join(entry)
+        if dir.current_is_dir():
+            _collect_nature_files(path, output)
+        elif entry.get_extension().to_lower() in ["glb", "gltf", "fbx", "obj"]:
+            output.append(path)
+        entry = dir.get_next()
+    dir.list_dir_end()
+
+
+func _spawn_nature_asset(pos: Vector3, scale_factor: float, scenes: Array[PackedScene], rng: RandomNumberGenerator) -> bool:
+    if scenes.is_empty():
+        return false
+    var packed: PackedScene = scenes[rng.randi_range(0, scenes.size() - 1)]
+    var instance = packed.instantiate()
+    if not instance is Node3D:
+        instance.queue_free()
+        return false
+    instance.position = pos
+    instance.rotation.y = rng.randf_range(0.0, TAU)
+    var uniform_scale := scale_factor * rng.randf_range(0.88, 1.12)
+    instance.scale = Vector3.ONE * uniform_scale
+    add_child(instance)
+    return true
+
 
 func _box_mesh(size: Vector3) -> BoxMesh:
     var mesh := BoxMesh.new()
@@ -205,6 +262,8 @@ func _add_box_visual(node_name: String, size: Vector3, pos: Vector3, color: Colo
     add_child(visual)
 
 func _make_tree(pos: Vector3, scale_factor: float, rng: RandomNumberGenerator) -> void:
+    if _spawn_nature_asset(pos, scale_factor, nature_tree_scenes, rng):
+        return
     var trunk := MeshInstance3D.new()
     var trunk_mesh := CylinderMesh.new()
     trunk_mesh.top_radius = 0.16 * scale_factor
@@ -230,6 +289,10 @@ func _make_tree(pos: Vector3, scale_factor: float, rng: RandomNumberGenerator) -
         add_child(crown)
 
 func _make_rock(pos: Vector3, size: float, height: float) -> void:
+    var rng := RandomNumberGenerator.new()
+    rng.randomize()
+    if _spawn_nature_asset(pos, maxf(size, 0.45), nature_rock_scenes, rng):
+        return
     var rock := MeshInstance3D.new()
     var mesh := SphereMesh.new()
     mesh.radius = size
