@@ -1,0 +1,31 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  export-apk:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3.0
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+      - name: Import Godot project
+        run: godot --headless --editor --path . --quit
+      - name: Export Android APK
+        run: |
+          mkdir -p build
+          godot --headless --path . --export-debug "Android" build/ChroniclesOfAsh.apk
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChroniclesOfAsh-Android-APK
+          path: build/ChroniclesOfAsh.apk
+          if-no-files-found: error
+          retention-days: 14
