@@ -16,6 +16,8 @@ var attack_serial := 0
 @onready var body_mesh: MeshInstance3D = $Body
 
 func _ready() -> void:
+    var chosen_class = get_tree().root.get_meta("selected_class", "warrior")
+    set_class(str(chosen_class))
     _build_character()
     var collision := get_node_or_null("CollisionShape3D")
     if collision == null:
