@@ -23,13 +23,13 @@ jobs:
           set -eux
           godot --version
 
-          # Godot 4.3 Android export preset targets SDK 34; the base image only
-          # installs API 33, which causes the export preset validation to fail.
+          # Install the exact Android SDK components documented for Godot 4.3.
+          # The container image ships a newer NDK, which can fail preset validation.
           export ANDROID_HOME="/usr/lib/android-sdk"
           export ANDROID_SDK_ROOT="$ANDROID_HOME"
           # sdkmanager may close stdin after checking licenses; avoid SIGPIPE failing the whole step.
           (yes | sdkmanager --licenses >/dev/null) || true
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "cmdline-tools;latest" "cmake;3.10.2.4988404" "ndk;23.2.8568313"
 
           # Make the export templates visible under the HOME used by GitHub Actions.
           mkdir -p "$HOME/.local/share/godot/export_templates/4.3.stable"
@@ -91,6 +91,7 @@ jobs:
           echo "Platform directories:"
           ls -la /usr/lib/android-sdk/platforms
           mkdir -p build
+          set -o pipefail
           godot --headless --verbose --path . --export-debug "Android" build/ChroniclesOfAsh.apk 2>&1 | tee build/export.log
           test -s build/ChroniclesOfAsh.apk
 
