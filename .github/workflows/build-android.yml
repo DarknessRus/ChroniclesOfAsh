@@ -82,8 +82,16 @@ jobs:
       - name: Export Android APK
         run: |
           set -eux
+          export ANDROID_HOME="/usr/lib/android-sdk"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          echo "Installed Android SDK packages:"
+          sdkmanager --list_installed || true
+          echo "Build-tools directories:"
+          ls -la /usr/lib/android-sdk/build-tools
+          echo "Platform directories:"
+          ls -la /usr/lib/android-sdk/platforms
           mkdir -p build
-          godot --headless --path . --export-debug "Android" build/ChroniclesOfAsh.apk
+          godot --headless --verbose --path . --export-debug "Android" build/ChroniclesOfAsh.apk 2>&1 | tee build/export.log
           test -s build/ChroniclesOfAsh.apk
 
       - name: Upload APK artifact
