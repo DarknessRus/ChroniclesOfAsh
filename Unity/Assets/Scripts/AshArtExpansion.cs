@@ -125,7 +125,7 @@ public static class AshArtExpansion
                 new Vector3(.12f, .6f, .05f), ember, new Vector3(0, i * 29f, 0), true);
             if (i % 2 == 0)
             {
-                var crystal = Part(root, PrimitiveType.Octahedron, "Ember crystal", new Vector3(x * 1.2f, .85f, z + 1.2f),
+                var crystal = Part(root, PrimitiveType.Cube, "Ember crystal", new Vector3(x * 1.2f, .85f, z + 1.2f),
                     new Vector3(.42f, 1.05f, .42f), new Color(.14f, .58f, .75f), new Vector3(0, i * 31f, 12f), true);
                 var lightObject = new GameObject("Crystal glow");
                 lightObject.transform.SetParent(crystal.transform, false);
@@ -242,18 +242,18 @@ public static class AshArtExpansion
 
         if (kind == 1 || kind == 3)
         {
-            Part(hero, PrimitiveType.Cone, "Hood crown", new Vector3(0f, .98f, -.015f),
+            Cone(hero, "Hood crown", hero.TransformPoint(new Vector3(0f, .98f, -.015f)),
                 new Vector3(.42f, .45f, .42f), kind == 1 ? new Color(.10f, .18f, .25f) : new Color(.15f, .10f, .20f));
             Part(hero, PrimitiveType.Cube, "Hood shadow", new Vector3(0f, .75f, .19f),
                 new Vector3(.38f, .24f, .13f), new Color(.055f, .055f, .07f));
         }
         if (kind == 0)
         {
-            Part(hero, PrimitiveType.Cone, "Helmet crest", new Vector3(0f, 1.02f, 0f),
+            Cone(hero, "Helmet crest", hero.TransformPoint(new Vector3(0f, 1.02f, 0f)),
                 new Vector3(.16f, .38f, .16f), accent);
             for (int side = -1; side <= 1; side += 2)
-                Part(hero, PrimitiveType.Cone, "Helmet horn", new Vector3(side * .2f, .84f, -.015f),
-                    new Vector3(.12f, .25f, .12f), metal, new Vector3(0, 0, side * -22f));
+                Cone(hero, "Helmet horn", hero.TransformPoint(new Vector3(side * .2f, .84f, -.015f)),
+                    new Vector3(.12f, .25f, .12f), metal);
         }
         if (kind == 2)
         {
@@ -277,7 +277,7 @@ public static class AshArtExpansion
         Color shadow = new Color(.10f, .12f, .17f);
         Part(enemy, PrimitiveType.Sphere, "Wraith rib cage", new Vector3(0f, .15f, .02f),
             new Vector3(.56f, .55f, .38f), shadow);
-        Part(enemy, PrimitiveType.Cone, "Wraith crown", new Vector3(0f, .85f, 0f),
+        Cone(enemy, "Wraith crown", enemy.TransformPoint(new Vector3(0f, .85f, 0f)),
             new Vector3(.5f, .55f, .45f), new Color(.17f, .08f, .13f));
         for (int side = -1; side <= 1; side += 2)
         {
@@ -285,8 +285,8 @@ public static class AshArtExpansion
                 new Vector3(.09f, .07f, .045f), new Color(1f, .12f, .035f), null, true);
             Part(enemy, PrimitiveType.Capsule, "Wraith arm", new Vector3(side * .42f, .1f, 0f),
                 new Vector3(.13f, .42f, .13f), shadow, new Vector3(0, 0, side * 24f));
-            Part(enemy, PrimitiveType.Cone, "Wraith claw", new Vector3(side * .53f, -.18f, .12f),
-                new Vector3(.09f, .22f, .09f), new Color(.38f, .12f, .16f), new Vector3(0, 0, side * 25f));
+            Cone(enemy, "Wraith claw", enemy.TransformPoint(new Vector3(side * .53f, -.18f, .12f)),
+                new Vector3(.09f, .22f, .09f), new Color(.38f, .12f, .16f));
         }
     }
 }
