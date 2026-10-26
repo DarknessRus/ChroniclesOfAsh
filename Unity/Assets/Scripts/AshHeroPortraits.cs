@@ -4,6 +4,7 @@ using UnityEngine.UI;
 /// <summary>Creates four distinct painterly fantasy portraits at runtime, requiring no external asset downloads.</summary>
 public static class AshHeroPortraits
 {
+    static readonly Sprite[] cached = new Sprite[4];
     static readonly Color[] accents = {
         new Color(.98f,.30f,.08f), new Color(.12f,.58f,1f),
         new Color(.30f,.78f,.39f), new Color(.58f,.28f,.86f)
@@ -11,6 +12,8 @@ public static class AshHeroPortraits
 
     public static Sprite Create(int kind)
     {
+        kind = Mathf.Clamp(kind,0,3);
+        if(cached[kind] != null) return cached[kind];
         const int w=256, h=320;
         var tex=new Texture2D(w,h,TextureFormat.RGBA32,false);
         tex.name="Chronicles of Ash Hero Portrait "+kind;
@@ -106,7 +109,8 @@ public static class AshHeroPortraits
             tex.SetPixel(x,y,Color.Lerp(c,new Color(.015f,.018f,.02f),.72f*(1-y/52f)));
         }
         tex.Apply(false,false);
-        return Sprite.Create(tex,new Rect(0,0,w,h),new Vector2(.5f,.5f),100);
+        cached[kind] = Sprite.Create(tex,new Rect(0,0,w,h),new Vector2(.5f,.5f),100);
+        return cached[kind];
     }
 
     static void Rect(Texture2D t,int x,int y,int w,int h,Color c)
