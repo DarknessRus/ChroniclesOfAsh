@@ -12,15 +12,17 @@ jobs:
   export-apk:
     runs-on: ubuntu-latest
     container:
-      image: barichello/godot-ci:4.3-stable
+      # The published barichello/godot-ci tag for Godot 4.3 is "4.3".
+      image: barichello/godot-ci:4.3
     steps:
       - name: Checkout project
         uses: actions/checkout@v4
-      - name: Check Godot and Android tools
+      - name: Check Godot and Android export templates
         run: |
           godot --version
-          test -d /root/.local/share/godot/export_templates || true
-      - name: Import Godot project
+          test -f /root/.local/share/godot/export_templates/4.3.stable/android_debug.apk
+          test -f /root/.local/share/godot/export_templates/4.3.stable/android_release.apk
+      - name: Import and validate Godot project
         run: godot --headless --editor --path . --quit
       - name: Export Android APK
         run: |
