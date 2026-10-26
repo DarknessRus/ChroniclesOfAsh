@@ -11,6 +11,134 @@ var selected_id := "warrior"
 var cards: Array[PanelContainer] = []
 var start_button: Button
 
+class HeroModelPortrait extends SubViewportContainer:
+    var model_class_id := "warrior"
+
+    func setup(id: String, tint: Color) -> bool:
+        model_class_id = id
+        custom_minimum_size = Vector2(0, 210)
+        size_flags_horizontal = Control.SIZE_EXPAND_FILL
+        stretch = true
+        var files: Array[String] = []
+        _collect_model_files("res://assets/free/rpg_characters", files)
+        files.sort()
+        if files.is_empty():
+            return false
+        var terms: Array[String] = []
+        match id:
+            "warrior": terms = ["warrior", "knight", "barbarian", "fighter"]
+            "mage": terms = ["mage", "wizard", "sorcerer"]
+            "ranger": terms = ["ranger", "archer", "elf", "hunter"]
+            "necromancer": terms = ["necromancer", "warlock", "dark", "skeleton"]
+        var chosen := ""
+        for term in terms:
+            for path in files:
+                if path.get_file().to_lower().contains(term):
+                    chosen = path
+                    break
+            if not chosen.is_empty():
+                break
+        if chosen.is_empty():
+            var index := 0
+            match id:
+                "mage": index = 1
+                "ranger": index = 2
+                "necromancer": index = 3
+            chosen = files[mini(index, files.size() - 1)]
+        var resource = load(chosen)
+        if not resource is PackedScene:
+            return false
+        var viewport := SubViewport.new()
+        viewport.size = Vector2i(300, 420)
+        viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+        viewport.own_world_3d = true
+        viewport.transparent_bg = false
+        add_child(viewport)
+        var world := Node3D.new()
+        viewport.add_child(world)
+        var environment_node := WorldEnvironment.new()
+        var environment := Environment.new()
+        environment.background_mode = Environment.BG_COLOR
+        environment.background_color = Color(0.025, 0.022, 0.030)
+        environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+        environment.ambient_light_color = Color(0.50, 0.48, 0.46)
+        environment.ambient_light_energy = 0.75
+        environment.glow_enabled = true
+        environment_node.environment = environment
+        world.add_child(environment_node)
+        var key_light := DirectionalLight3D.new()
+        key_light.rotation_degrees = Vector3(-28, -25, 0)
+        key_light.light_color = tint.lightened(0.38)
+        key_light.light_energy = 1.6
+        world.add_child(key_light)
+        var rim_light := OmniLight3D.new()
+        rim_light.position = Vector3(-1.4, 2.1, -1.5)
+        rim_light.light_color = tint
+        rim_light.light_energy = 2.2
+        rim_light.omni_range = 6.0
+        world.add_child(rim_light)
+        var camera := Camera3D.new()
+        camera.position = Vector3(0, 1.1, 4.0)
+        camera.fov = 38.0
+        camera.current = true
+        camera.look_at(Vector3(0, 1.0, 0), Vector3.UP)
+        world.add_child(camera)
+        var model = resource.instantiate()
+        if not model is Node3D:
+            model.queue_free()
+            return false
+        model.rotation.y = PI
+        world.add_child(model)
+        call_deferred("_fit_model", model)
+        return true
+
+    func _collect_model_files(folder: String, output: Array[String]) -> void:
+        var dir := DirAccess.open(folder)
+        if dir == null:
+            return
+        dir.list_dir_begin()
+        var entry := dir.get_next()
+        while not entry.is_empty():
+            if entry.begins_with("."):
+                entry = dir.get_next()
+                continue
+            var path := folder.path_join(entry)
+            if dir.current_is_dir():
+                _collect_model_files(path, output)
+            elif entry.get_extension().to_lower() in ["fbx", "glb", "gltf", "obj"]:
+                output.append(path)
+            entry = dir.get_next()
+        dir.list_dir_end()
+
+    func _fit_model(model: Node3D) -> void:
+        if not is_instance_valid(model):
+            return
+        var meshes: Array[MeshInstance3D] = []
+        _collect_meshes(model, meshes)
+        var bounds := AABB()
+        var first := true
+        for mesh in meshes:
+            if mesh.mesh == null:
+                continue
+            var current: AABB = mesh.global_transform * mesh.get_aabb()
+            if first:
+                bounds = current
+                first = false
+            else:
+                bounds = bounds.merge(current)
+        if first or bounds.size.y <= 0.01:
+            return
+        var factor := 2.1 / bounds.size.y
+        model.scale *= factor
+        model.position.y -= bounds.position.y * factor
+
+    func _collect_meshes(node: Node, output: Array[MeshInstance3D]) -> void:
+        if node is MeshInstance3D:
+            output.append(node)
+        for child in node.get_children():
+            _collect_meshes(child, output)
+
+
 class PortraitArt extends Control:
     var class_id := "warrior"
     var accent := Color(1.0, 0.28, 0.055)
@@ -175,8 +303,14 @@ func _build() -> void:
         inner.add_theme_constant_override("separation", 5)
         card.add_child(inner)
 
-        var portrait := PortraitArt.new()
-        portrait.setup(data.id, data.color)
+        var model_portrait := HeroModelPortrait.new()
+        var portrait: Control
+        if model_portrait.setup(data.id, data.color):
+            portrait = model_portrait
+        else:
+            var drawn_portrait := PortraitArt.new()
+            drawn_portrait.setup(data.id, data.color)
+            portrait = drawn_portrait
         portrait.size_flags_vertical = Control.SIZE_EXPAND_FILL
         portrait.custom_minimum_size = Vector2(0, 180)
         inner.add_child(portrait)
