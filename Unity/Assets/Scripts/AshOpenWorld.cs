@@ -128,7 +128,7 @@ public static class AshOpenWorld
             trunk.GetComponent<Renderer>().sharedMaterial = MaterialFor(new Color(.19f,.13f,.095f));
             for (int k = 0; k < 3; k++)
             {
-                var crown = GameObject.CreatePrimitive(PrimitiveType.Cone);
+                var crown = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
                 crown.name = "Pine crown"; crown.transform.SetParent(tree.transform, false);
                 crown.transform.localPosition = Vector3.up * (scale * (.75f + k*.37f));
                 crown.transform.localScale = new Vector3(scale*(1.05f-k*.22f), scale*.7f, scale*(1.05f-k*.22f));
