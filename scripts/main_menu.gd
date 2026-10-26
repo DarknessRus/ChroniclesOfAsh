@@ -101,93 +101,136 @@ func _ready() -> void:
 func _build() -> void:
     var bg := ColorRect.new()
     bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    bg.color = Color(0.012,0.012,0.018)
+    bg.color = Color(0.012, 0.010, 0.016)
     add_child(bg)
 
-    var scroll := ScrollContainer.new()
-    scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    scroll.offset_left = 14
-    scroll.offset_top = 8
-    scroll.offset_right = -14
-    scroll.offset_bottom = -8
-    add_child(scroll)
+    # Landscape composition matching the reference: title rail, four hero cards, lore/start rail.
+    var root := HBoxContainer.new()
+    root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    root.offset_left = 12
+    root.offset_top = 12
+    root.offset_right = -12
+    root.offset_bottom = -12
+    root.add_theme_constant_override("separation", 10)
+    add_child(root)
 
-    var col := VBoxContainer.new()
-    col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    col.add_theme_constant_override("separation", 8)
-    scroll.add_child(col)
+    var left := PanelContainer.new()
+    left.custom_minimum_size = Vector2(155, 0)
+    var left_style := StyleBoxFlat.new()
+    left_style.bg_color = Color(0.025, 0.018, 0.022)
+    left_style.border_color = Color(0.42, 0.19, 0.075)
+    left_style.set_border_width_all(1)
+    left.add_theme_stylebox_override("panel", left_style)
+    root.add_child(left)
 
-    col.add_child(_label("DARK FANTASY  ·  ACTION RPG", 11, Color(0.92,0.42,0.12)))
-    col.add_child(_label("ХРОНИКИ", 22, Color(0.87,0.78,0.61)))
-    var title := _label("ПЕПЛА", 42, Color(1.0,0.30,0.075))
-    col.add_child(title)
-    col.add_child(_label("КОРОЛЕВСТВА ПАЛИ. ПРАХ ПОМНИТ ИМЕНА.", 10, Color(0.63,0.56,0.49)))
-    col.add_child(_ornament())
+    var left_col := VBoxContainer.new()
+    left_col.alignment = BoxContainer.ALIGNMENT_CENTER
+    left_col.add_theme_constant_override("separation", 12)
+    left.add_child(left_col)
+    left_col.add_child(_label("✥", 28, Color(1.0, 0.43, 0.10)))
+    left_col.add_child(_label("ХРОНИКИ", 23, Color(0.88, 0.77, 0.59)))
+    var title := _label("ПЕПЛА", 34, Color(1.0, 0.29, 0.06))
+    left_col.add_child(title)
+    left_col.add_child(_ornament())
+    left_col.add_child(_label("КОРОЛЕВСТВА\nПАЛИ.", 13, Color(0.78, 0.67, 0.54)))
+    left_col.add_child(_label("ПРАХ ПОМНИТ\nИМЕНА.", 12, Color(0.57, 0.49, 0.42)))
+    var left_spacer := Control.new()
+    left_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    left_col.add_child(left_spacer)
+    left_col.add_child(_label("DARK FANTASY\nACTION RPG", 10, Color(0.82, 0.34, 0.10)))
 
-    var heading := _label("—  ВЫБЕРИ СВОЙ ПУТЬ  —", 17, Color(0.91,0.75,0.51))
-    col.add_child(heading)
+    var center := VBoxContainer.new()
+    center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    center.add_theme_constant_override("separation", 8)
+    root.add_child(center)
+    center.add_child(_label("ВЫБЕРИ СВОЙ ПУТЬ", 19, Color(0.93, 0.78, 0.54)))
+    var subtitle := _label("ЧЕТЫРЕ СУДЬБЫ · ОДИН МИР, ПОГРУЖЁННЫЙ В ПЕПЕЛ", 9, Color(0.61, 0.52, 0.43))
+    center.add_child(subtitle)
 
     var grid := GridContainer.new()
-    grid.columns = 2
+    grid.columns = 4
     grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    grid.add_theme_constant_override("h_separation", 9)
-    grid.add_theme_constant_override("v_separation", 9)
-    col.add_child(grid)
+    grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    grid.add_theme_constant_override("h_separation", 7)
+    center.add_child(grid)
 
     for data in CLASSES:
         var card := PanelContainer.new()
         card.set_meta("class_id", data.id)
         card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-        card.custom_minimum_size = Vector2(0, 300)
+        card.size_flags_vertical = Control.SIZE_EXPAND_FILL
+        card.custom_minimum_size = Vector2(0, 0)
         var style := StyleBoxFlat.new()
-        style.bg_color = Color(0.035,0.032,0.038)
-        style.border_color = data.color.darkened(0.58)
-        style.set_border_width_all(2)
-        style.set_corner_radius_all(1)
-        style.content_margin_left = 7
-        style.content_margin_right = 7
-        style.content_margin_top = 7
-        style.content_margin_bottom = 8
+        style.bg_color = Color(0.025, 0.024, 0.030)
+        style.border_color = data.color.darkened(0.62)
+        style.set_border_width_all(1)
+        style.content_margin_left = 5
+        style.content_margin_right = 5
+        style.content_margin_top = 6
+        style.content_margin_bottom = 6
         card.add_theme_stylebox_override("panel", style)
 
         var inner := VBoxContainer.new()
+        inner.size_flags_vertical = Control.SIZE_EXPAND_FILL
         inner.add_theme_constant_override("separation", 5)
         card.add_child(inner)
 
         var portrait := PortraitArt.new()
         portrait.setup(data.id, data.color)
+        portrait.size_flags_vertical = Control.SIZE_EXPAND_FILL
+        portrait.custom_minimum_size = Vector2(0, 180)
         inner.add_child(portrait)
 
-        var name := _label(data.name, 16, Color(0.92,0.80,0.61))
-        inner.add_child(name)
-        var role := _label(data.role, 10, data.color.lightened(0.18))
+        inner.add_child(_ornament())
+        inner.add_child(_label(data.name, 15, Color(0.93, 0.81, 0.63)))
+        var role := _label(data.role, 9, data.color.lightened(0.18))
         role.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
         inner.add_child(role)
-        var desc := _label(data.desc, 10, Color(0.67,0.62,0.57))
+        var desc := _label(data.desc, 9, Color(0.67, 0.61, 0.54))
         desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-        desc.custom_minimum_size = Vector2(0, 30)
+        desc.size_flags_vertical = Control.SIZE_EXPAND_FILL
         inner.add_child(desc)
 
         var choose := Button.new()
-        choose.text = "ВЫБРАТЬ ГЕРОЯ"
+        choose.text = "ВЫБРАТЬ"
         choose.custom_minimum_size = Vector2(0, 34)
         choose.pressed.connect(_select.bind(data.id))
         inner.add_child(choose)
         grid.add_child(card)
         cards.append(card)
 
-    col.add_child(_ornament())
-    var lore := _label("МЁРТВЫЕ ЛЕСА  ·  ЗАБЫТЫЕ КАТАКОМБЫ  ·  ДРЕВНИЕ РЕЛИКВИИ", 10, Color(0.63,0.54,0.45))
-    lore.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    col.add_child(lore)
+    var right := PanelContainer.new()
+    right.custom_minimum_size = Vector2(158, 0)
+    var right_style := StyleBoxFlat.new()
+    right_style.bg_color = Color(0.025, 0.018, 0.022)
+    right_style.border_color = Color(0.42, 0.19, 0.075)
+    right_style.set_border_width_all(1)
+    right_style.content_margin_left = 8
+    right_style.content_margin_right = 8
+    right_style.content_margin_top = 10
+    right_style.content_margin_bottom = 10
+    right.add_theme_stylebox_override("panel", right_style)
+    root.add_child(right)
 
+    var right_col := VBoxContainer.new()
+    right_col.alignment = BoxContainer.ALIGNMENT_CENTER
+    right_col.add_theme_constant_override("separation", 10)
+    right.add_child(right_col)
+    right_col.add_child(_label("ВЫБЕРИ\nСВОЙ ПУТЬ", 17, Color(0.94, 0.78, 0.55)))
+    right_col.add_child(_ornament())
+    var lore := _label("Мир Хроник Пепла хранит множество тайн, опасностей и наград.", 10, Color(0.73, 0.66, 0.58))
+    lore.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    right_col.add_child(lore)
+    var right_spacer := Control.new()
+    right_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    right_col.add_child(right_spacer)
     start_button = Button.new()
-    start_button.custom_minimum_size = Vector2(0, 52)
+    start_button.custom_minimum_size = Vector2(0, 54)
     start_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    start_button.add_theme_font_size_override("font_size", 18)
+    start_button.add_theme_font_size_override("font_size", 14)
     start_button.pressed.connect(_start_game)
-    col.add_child(start_button)
-    col.add_child(_label("МИР СОЗДАЁТСЯ ЗАНОВО. КАЖДАЯ ЭКСПЕДИЦИЯ УНИКАЛЬНА.", 9, Color(0.45,0.39,0.34)))
+    right_col.add_child(start_button)
+    right_col.add_child(_label("ГОРЫ · ЛЕСА\nРЕКИ · ПОДЗЕМЕЛЬЯ", 9, Color(0.77, 0.46, 0.25)))
     _refresh()
 
 func _ornament() -> Control:
