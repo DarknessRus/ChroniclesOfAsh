@@ -12,16 +12,21 @@ jobs:
   export-apk:
     runs-on: ubuntu-latest
     container:
-      image: barichello/godot-ci:4.3.0
+      image: barichello/godot-ci:4.3-stable
     steps:
       - name: Checkout project
         uses: actions/checkout@v4
+      - name: Check Godot and Android tools
+        run: |
+          godot --version
+          test -d /root/.local/share/godot/export_templates || true
       - name: Import Godot project
         run: godot --headless --editor --path . --quit
       - name: Export Android APK
         run: |
           mkdir -p build
           godot --headless --path . --export-debug "Android" build/ChroniclesOfAsh.apk
+          test -s build/ChroniclesOfAsh.apk
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
