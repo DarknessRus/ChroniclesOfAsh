@@ -78,17 +78,14 @@ jobs:
           test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_release.apk"
           cat export_presets.cfg
 
-      - name: Set up Python for asset downloader
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
       - name: Download free CC0 fantasy character assets
         shell: bash
         run: |
           set -u
           mkdir -p assets/free/rpg_characters /tmp/rpg-character-pack
-          python3 -m pip install --quiet gdown
+          apt-get update -qq
+          apt-get install -y -qq python3 python3-pip
+          python3 -m pip install --break-system-packages --quiet gdown
           if gdown --folder "https://drive.google.com/drive/folders/1MIRQXLfTd21HMI5rwOb6Xy0rv0xv1m8b" --remaining-ok -O /tmp/rpg-character-pack; then
             find /tmp/rpg-character-pack -type f -iname '*.zip' -print0 | while IFS= read -r -d '' archive; do
               unzip -oq "$archive" -d /tmp/rpg-character-pack/unpacked || true
