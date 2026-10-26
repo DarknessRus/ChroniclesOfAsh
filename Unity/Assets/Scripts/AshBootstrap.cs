@@ -169,7 +169,7 @@ public class AshBootstrap : MonoBehaviour
         if (canvas != null) canvas.gameObject.SetActive(true);
         loadingRoot = AddPanel(canvas.transform, Vector2.zero, Vector2.one, new Color(.025f,.032f,.038f,.98f));
         loadingRoot.name = "World Loading Overlay";
-        loadingLabel = AddText(loadingRoot.transform, "ПРОБУЖДЕНИЕ ПЕПЕЛЬНОЙ ДОЛИНЫ...\\nПодготовка мира", 30,
+        loadingLabel = AddText(loadingRoot.transform, "ПРОБУЖДЕНИЕ ПЕПЕЛЬНОЙ ДОЛИНЫ...\nПодготовка мира", 30,
             new Vector2(.12f,.38f), new Vector2(.88f,.62f), new Color(.94f,.72f,.38f),
             TextAnchor.MiddleCenter, FontStyle.Bold);
 
@@ -211,7 +211,7 @@ public class AshBootstrap : MonoBehaviour
         catch (System.Exception ex)
         {
             Debug.LogError("[Ash Chronicles] " + status + " FAILED: " + ex);
-            if (loadingLabel != null) loadingLabel.text = "НЕ УДАЛОСЬ ЗАПУСТИТЬ ИГРУ\\n" + ex.GetType().Name + ": " + ex.Message;
+            if (loadingLabel != null) loadingLabel.text = "НЕ УДАЛОСЬ ЗАПУСТИТЬ ИГРУ\n" + ex.GetType().Name + ": " + ex.Message;
             var back = AddPanel(loadingRoot.transform, new Vector2(.34f,.18f), new Vector2(.66f,.29f), new Color(.55f,.22f,.07f,1));
             back.name = "Return to character selection";
             AddText(back.transform, "НАЗАД К ВЫБОРУ ГЕРОЯ", 20, Vector2.zero, Vector2.one,
