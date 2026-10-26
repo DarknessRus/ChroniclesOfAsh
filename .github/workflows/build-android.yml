@@ -110,7 +110,7 @@ jobs:
             --output /tmp/stylized-nature.zip
           unzip -oq /tmp/stylized-nature.zip -d assets/free/nature
           echo "Nature asset inventory:"
-          find assets/free/nature -type f \( -iname '*.glb' -o -iname '*.gltf' -o -iname '*.fbx' -o -iname '*.obj' \) | head -100
+          find assets/free/nature -type f \( -iname '*.glb' -o -iname '*.gltf' -o -iname '*.fbx' -o -iname '*.obj' \) | sed -n '1,100p'
           test "$(find assets/free/nature -type f \( -iname '*.glb' -o -iname '*.gltf' -o -iname '*.fbx' -o -iname '*.obj' \) | wc -l)" -gt 0
 
       - name: Import and validate Godot project
