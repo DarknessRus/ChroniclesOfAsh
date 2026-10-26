@@ -181,11 +181,12 @@ public class AshBootstrap : MonoBehaviour
         AddText(hud.transform,heroNames[selectedHero]+"  •  УРОВЕНЬ 1",23,new Vector2(.025f,.87f),new Vector2(.40f,.98f),new Color(.95f,.84f,.62f),TextAnchor.MiddleLeft,FontStyle.Bold);
         AddBar(hud.transform,"ЗДОРОВЬЕ",new Vector2(.025f,.83f),new Color(.65f,.12f,.09f));
         AddBar(hud.transform,"МАНА",new Vector2(.025f,.79f),new Color(.10f,.36f,.69f));
-        AddText(hud.transform,"◉",60,new Vector2(.02f,.02f),new Vector2(.22f,.24f),new Color(1f,.78f,.35f,.65f),TextAnchor.MiddleCenter,FontStyle.Bold);
+        var stick=AddPanel(hud.transform,new Vector2(.025f,.035f),new Vector2(.19f,.29f),new Color(.07f,.09f,.10f,.62f)); stick.name="Virtual Joystick"; stick.AddComponent<AshVirtualJoystick>(); var knob=AddPanel(stick.transform,new Vector2(.30f,.30f),new Vector2(.70f,.70f),new Color(.78f,.57f,.28f,.82f)); knob.name="Knob";
         AddText(hud.transform,"МИНИ-КАРТА",15,new Vector2(.82f,.80f),new Vector2(.97f,.96f),new Color(.92f,.80f,.57f),TextAnchor.MiddleCenter,FontStyle.Bold);
-        AddText(hud.transform,"✦     ⚔     ◈",35,new Vector2(.70f,.03f),new Vector2(.98f,.20f),new Color(.93f,.65f,.25f),TextAnchor.MiddleCenter,FontStyle.Bold);
+        AddCombatButton(hud.transform,"⚔",new Vector2(.86f,.04f),new Vector2(.97f,.20f)); AddCombatButton(hud.transform,"✦",new Vector2(.75f,.14f),new Vector2(.85f,.27f));
         AddText(hud.transform,"КОСТЁР  •  ПЕПЕЛЬНАЯ ДОЛИНА",15,new Vector2(.28f,.04f),new Vector2(.68f,.10f),new Color(.85f,.83f,.75f),TextAnchor.MiddleCenter,FontStyle.Normal);
     }
+    void AddCombatButton(Transform parent,string label,Vector2 min,Vector2 max){var b=AddPanel(parent,min,max,new Color(.24f,.10f,.055f,.92f));b.AddComponent<Outline>().effectColor=new Color(.91f,.55f,.16f);AddText(b.transform,label,38,new Vector2(0,0),new Vector2(1,1),new Color(1f,.78f,.36f),TextAnchor.MiddleCenter,FontStyle.Bold);var button=b.AddComponent<Button>();button.targetGraphic=b.GetComponent<Image>();button.onClick.AddListener(()=>{AshCombatButton.AttackPressed=true;});}
     void AddBar(Transform parent,string label,Vector2 pos,Color color)
     {
         var b=AddPanel(parent,pos,new Vector2(pos.x+.25f,pos.y+.025f),new Color(.03f,.04f,.05f,.9f));
