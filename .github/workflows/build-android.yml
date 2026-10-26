@@ -50,21 +50,16 @@ jobs:
           EOF
 
           # Explicitly configure the debug signing key in the Android export preset.
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("export_presets.cfg")
-          s = p.read_text()
-          marker = 'package/signed=true'
-          replacement = '\n'.join([
-              'package/signed=true',
-              'package/keystore/debug="' + str(Path.home() / ".android/debug.keystore") + '"',
-              'package/keystore/debug_user="androiddebugkey"',
-              'package/keystore/debug_password="android"',
-          ])
-          if marker not in s:
-              raise SystemExit("Could not find package/signed in export_presets.cfg")
-          p.write_text(s.replace(marker, replacement, 1))
-          PY
+          # Use awk because the Godot CI container does not include Python.
+          awk -v home="$HOME" '
+            { print }
+            $0 == "package/signed=true" {
+              print "package/keystore/debug=\"" home "/.android/debug.keystore\""
+              print "package/keystore/debug_user=\"androiddebugkey\""
+              print "package/keystore/debug_password=\"android\""
+            }
+          ' export_presets.cfg > export_presets.cfg.tmp
+          mv export_presets.cfg.tmp export_presets.cfg
 
           test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_debug.apk"
           test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_release.apk"
