@@ -57,7 +57,6 @@ public class AshBootstrap : MonoBehaviour
         }
 
         module.enabled = true;
-        module.forceModuleActive = true;
     }
 
     void CreateCanvas()
