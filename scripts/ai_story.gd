@@ -115,7 +115,9 @@ func generate_quest() -> void:
     result_label.text = "Связываемся с летописцем мира…"
 
     var player = world.get_node_or_null("Player")
-    var level := int(player.level) if player != null and "level" in player else 1
+    var level := 1
+    if player != null:
+        level = int(player.level)
     var payload := {
         "level": level,
         "location": "Пепельная чаща",
@@ -186,7 +188,7 @@ func on_enemy_defeated(enemy_type: String) -> void:
         quest_label.text = "Задание выполнено: %s\n\nНаграда: %d опыта. Создай новое событие, чтобы узнать, что произойдёт дальше." % [title, reward]
         result_label.text = "Событие завершено"
         var player = world.get_node_or_null("Player")
-        if player != null and "experience" in player:
+        if player != null:
             player.experience += reward
             if player.experience >= player.level * 50:
                 player.experience -= player.level * 50
