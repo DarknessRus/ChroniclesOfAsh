@@ -231,7 +231,7 @@ func _generate_local_dungeon(cave_name: String, pos: Vector3) -> void:
         label.font_size = 30
         dungeon.add_child(label)
     for i in range(5):
-        _spawn_enemy(pos + Vector3(randf_range(-8, 8), 0.8, randf_range(-8, 8)), ["ash_wolf", "bone_wretch", "slime"][randi_range(0, 2)])
+        _spawn_enemy(dungeon.position + Vector3(randf_range(-8, 8), 0.8, randf_range(-8, 8)), ["ash_wolf", "bone_wretch", "slime"][randi_range(0, 2)])
     var announcement := Label3D.new()
     announcement.text = "ПОДЗЕМЕЛЬЕ: " + cave_name
     announcement.position = dungeon.position + Vector3(0, 4, 0)
