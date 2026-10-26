@@ -127,6 +127,7 @@ public class AshBootstrap : MonoBehaviour
         player.GetComponent<Renderer>().material=Mat(new Color(.22f,.24f,.25f),.65f);
         var controller=player.AddComponent<CharacterController>(); controller.height=1.8f; controller.radius=.35f;
         player.AddComponent<AshPlayerController>();
+        BuildHeroSilhouette(player.transform, selectedHero);
         var enemy=GameObject.CreatePrimitive(PrimitiveType.Capsule);enemy.name="Ash Wraith";enemy.transform.position=new Vector3(2,1,5);enemy.GetComponent<Renderer>().material=Mat(new Color(.35f,.12f,.16f),.8f);enemy.AddComponent<AshEnemy>();
         var cam=new GameObject("Follow Camera").AddComponent<Camera>(); cam.tag="MainCamera";
         cam.transform.position=new Vector3(0,5,-8);cam.transform.LookAt(player.transform.position+Vector3.up*1.2f);
@@ -154,6 +155,80 @@ public class AshBootstrap : MonoBehaviour
         var fire=GameObject.CreatePrimitive(PrimitiveType.Sphere);fire.name="Campfire ember";fire.transform.SetParent(root);fire.transform.position=new Vector3(-5,.6f,-2);fire.transform.localScale=new Vector3(.5f,.9f,.5f);fire.GetComponent<Renderer>().material=Mat(new Color(1f,.28f,.035f),.35f);
         var flame=fire.AddComponent<Light>();flame.type=LightType.Point;flame.range=12;flame.intensity=3;flame.color=new Color(1f,.28f,.07f);
         var tent=GameObject.CreatePrimitive(PrimitiveType.Cube);tent.name="Traveller tent";tent.transform.SetParent(root);tent.transform.position=new Vector3(-8,1,-1);tent.transform.rotation=Quaternion.Euler(0,35,0);tent.transform.localScale=new Vector3(3,2,3);tent.GetComponent<Renderer>().material=Mat(new Color(.31f,.22f,.13f),1);
+        BuildWorldDetails(root);
+    }
+    void BuildWorldDetails(Transform root)
+    {
+        // Broken basalt slabs and boulders break up the flat prototype ground.
+        for(int i=0;i<34;i++)
+        {
+            float a=i*2.399f;
+            float radius=7f+(i%6)*4.2f;
+            Vector3 p=new Vector3(Mathf.Cos(a)*radius,.25f,Mathf.Sin(a)*radius+5f);
+            var rock=GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            rock.name="Weathered basalt"; rock.transform.SetParent(root);
+            rock.transform.position=p;
+            rock.transform.rotation=Quaternion.Euler(i*13f,i*37f,i*19f);
+            float s=.55f+(i%4)*.22f;
+            rock.transform.localScale=new Vector3(s*1.5f,s,s*.9f);
+            rock.GetComponent<Renderer>().material=Mat(new Color(.19f,.21f,.22f),.98f);
+        }
+        // A winding ash path leads from the camp toward the bridge.
+        for(int i=0;i<18;i++)
+        {
+            float z=-7f+i*1.05f;
+            float x=Mathf.Sin(i*.22f)*1.7f;
+            var tile=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            tile.name="Ashen footpath"; tile.transform.SetParent(root);
+            tile.transform.position=new Vector3(x,.055f,z);
+            tile.transform.rotation=Quaternion.Euler(0,Mathf.Sin(i*.4f)*12f,0);
+            tile.transform.localScale=new Vector3(1.45f,.07f,1.0f);
+            tile.GetComponent<Renderer>().material=Mat(i%3==0?new Color(.27f,.25f,.23f):new Color(.21f,.22f,.22f),1f);
+        }
+        // Sparse drifting embers add movement without heavy particle counts.
+        var ash=new GameObject("Drifting ash and embers"); ash.transform.SetParent(root);
+        var ps=ash.AddComponent<ParticleSystem>();
+        var main=ps.main; main.loop=true; main.startLifetime=7f; main.startSpeed=.35f;
+        main.startSize=new ParticleSystem.MinMaxCurve(.025f,.075f);
+        main.startColor=new Color(1f,.42f,.13f,.72f); main.maxParticles=180;
+        var emission=ps.emission; emission.rateOverTime=18f;
+        var shape=ps.shape; shape.shapeType=ParticleSystemShapeType.Box; shape.scale=new Vector3(55f,8f,55f);
+        var velocity=ps.velocityOverLifetime; velocity.enabled=true;
+        velocity.x=new ParticleSystem.MinMaxCurve(-.18f,.18f);
+        velocity.y=new ParticleSystem.MinMaxCurve(.08f,.35f);
+        velocity.z=new ParticleSystem.MinMaxCurve(-.12f,.12f);
+        ash.transform.position=new Vector3(0,2f,10f);
+        var renderer=ash.GetComponent<ParticleSystemRenderer>();
+        renderer.material=new Material(Shader.Find("Sprites/Default"));
+    }
+    void BuildHeroSilhouette(Transform hero,int kind)
+    {
+        Color metal=new Color(.19f,.21f,.23f);
+        Color accent=kind==0?new Color(.55f,.12f,.08f):kind==1?new Color(.10f,.32f,.52f):kind==2?new Color(.12f,.34f,.22f):new Color(.32f,.19f,.40f);
+        CreateHeroPart(hero,PrimitiveType.Cube,"Chest armor",new Vector3(0,.08f,0),new Vector3(.72f,.68f,.42f),metal);
+        CreateHeroPart(hero,PrimitiveType.Sphere,"Shoulder left",new Vector3(-.39f,.30f,0),new Vector3(.28f,.28f,.30f),accent);
+        CreateHeroPart(hero,PrimitiveType.Sphere,"Shoulder right",new Vector3(.39f,.30f,0),new Vector3(.28f,.28f,.30f),accent);
+        CreateHeroPart(hero,PrimitiveType.Sphere,"Helmet",new Vector3(0,.67f,0),new Vector3(.43f,.43f,.40f),kind==1?accent:metal);
+        CreateHeroPart(hero,PrimitiveType.Cube,"Waist guard",new Vector3(0,-.38f,0),new Vector3(.66f,.22f,.43f),accent);
+        if(kind==0 || kind==2)
+        {
+            CreateHeroPart(hero,PrimitiveType.Cube,kind==0?"Battle axe haft":"Longbow",new Vector3(.57f,.05f,.05f),new Vector3(.10f,1.05f,.10f),new Color(.34f,.22f,.12f));
+            if(kind==0) CreateHeroPart(hero,PrimitiveType.Cube,"Axe blade",new Vector3(.58f,.48f,.05f),new Vector3(.42f,.28f,.12f),new Color(.48f,.50f,.50f));
+        }
+        else
+        {
+            CreateHeroPart(hero,PrimitiveType.Cylinder,"Arcane staff",new Vector3(.56f,.02f,.05f),new Vector3(.09f,.72f,.09f),new Color(.30f,.20f,.13f));
+            var orb=CreateHeroPart(hero,PrimitiveType.Sphere,"Glowing staff crystal",new Vector3(.56f,.48f,.05f),new Vector3(.22f,.22f,.22f),kind==1?new Color(.18f,.55f,1f):new Color(.58f,.25f,.82f));
+            var glow=orb.AddComponent<Light>(); glow.type=LightType.Point; glow.range=2.5f; glow.intensity=.7f; glow.color=kind==1?new Color(.2f,.5f,1f):new Color(.55f,.2f,.8f);
+        }
+    }
+    GameObject CreateHeroPart(Transform parent,PrimitiveType type,string label,Vector3 localPosition,Vector3 localScale,Color color)
+    {
+        var part=GameObject.CreatePrimitive(type); part.name=label; part.transform.SetParent(parent,false);
+        part.transform.localPosition=localPosition; part.transform.localScale=localScale;
+        var col=part.GetComponent<Collider>(); if(col!=null) Destroy(col);
+        part.GetComponent<Renderer>().material=Mat(color,.72f);
+        return part;
     }
     void CreateTree(Transform root,Vector3 pos,float scale)
     {
