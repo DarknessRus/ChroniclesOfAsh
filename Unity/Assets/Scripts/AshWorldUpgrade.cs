@@ -141,4 +141,85 @@ public static class AshWorldUpgrade
                 new Vector3(.22f,.75f,.04f),i%2==0?ember:cold,null,true);
         }
     }
+
+    /// <summary>Expands the valley into a genuinely explorable landscape with ridges, forest, and a winding river.</summary>
+    public static void BuildOpenWorld(Transform root)
+    {
+        Color darkRock = new Color(.105f,.14f,.16f);
+        Color ground = new Color(.13f,.18f,.15f);
+        Color water = new Color(.035f,.19f,.25f);
+        Color pine = new Color(.055f,.13f,.105f);
+        Color pineLight = new Color(.09f,.19f,.145f);
+
+        // Rolling foothills in several layers, extending well beyond the starting clearing.
+        for (int i=0;i<44;i++)
+        {
+            float a=i*2.39996f, radius=48f+(i%5)*8f;
+            float x=Mathf.Cos(a)*radius, z=Mathf.Sin(a)*radius+18f;
+            float h=10f+(i%7)*3.2f;
+            var hill=Part(root,PrimitiveType.Sphere,"Open-world rolling foothill",new Vector3(x,h*.12f,z),
+                new Vector3(19f+(i%3)*5f,h,23f+(i%4)*4f),i%4==0?darkRock:ground,new Vector3((i%3)*4f,i*17f,(i%5)-2f));
+        }
+
+        // A broken mountain range with overlapping peaks at different depths.
+        for (int i=0;i<25;i++)
+        {
+            float x=-120f+i*10f, z=88f+Mathf.Sin(i*.73f)*14f;
+            float h=28f+Mathf.Abs(Mathf.Sin(i*1.91f))*34f;
+            Part(root,PrimitiveType.Cube,"Distant jagged mountain",new Vector3(x,h*.43f,z),
+                new Vector3(17f+(i%3)*4f,h,20f+(i%4)*3f),darkRock,new Vector3(0,i*23f,(i%2==0?-1f:1f)*8f));
+            Part(root,PrimitiveType.Cube,"Mountain broken crown",new Vector3(x,h+5f,z),
+                new Vector3(10f+(i%3)*3f,12f+(i%4)*4f,12f),new Color(.16f,.18f,.19f),new Vector3(0,i*31f,12f));
+        }
+
+        // Curving river segments; the crossing stones make a visible route through the forest.
+        for (int i=0;i<46;i++)
+        {
+            float z=-30f+i*3.2f;
+            float x=15f+Mathf.Sin(i*.18f)*9f;
+            float nextX=15f+Mathf.Sin((i+1)*.18f)*9f;
+            var segment=Part(root,PrimitiveType.Cube,"Winding moon river",new Vector3(x,.10f,z),
+                new Vector3(5f,.12f,4.1f),water,new Vector3(0,Mathf.Atan2(nextX-x,3.2f)*Mathf.Rad2Deg,0));
+        }
+
+        // A broad forest beyond the starting camp, with a clear corridor toward the castle.
+        Random.State previous=Random.state;
+        Random.InitState(617204);
+        int planted=0, attempts=0;
+        while(planted<180 && attempts<1200)
+        {
+            attempts++;
+            float x=Random.Range(-88f,88f), z=Random.Range(-38f,104f);
+            if(Mathf.Abs(x)<8f && z<28f) continue;
+            float riverX=15f+Mathf.Sin(((z+30f)/3.2f)*.18f)*9f;
+            if(Mathf.Abs(x-riverX)<6f) continue;
+            float s=Random.Range(1.6f,3.6f);
+            Part(root,PrimitiveType.Cylinder,"Forest pine trunk",new Vector3(x,s*.58f,z),
+                new Vector3(.20f,s*.7f,.20f),new Color(.20f,.13f,.09f));
+            for(int tier=0;tier<3;tier++)
+                Part(root,PrimitiveType.Sphere,"Pine canopy",new Vector3(x,s*(.8f+tier*.40f),z),
+                    new Vector3(s*(1.1f-tier*.18f),s*.75f,s*(1.1f-tier*.18f)),
+                    tier==0?pine:pineLight);
+            planted++;
+        }
+        Random.state=previous;
+
+        // Landmark boulders and stepping stones deepen the landscape and mark a river crossing.
+        for(int i=0;i<58;i++)
+        {
+            float a=i*2.39996f, r=12f+(i%9)*7.3f;
+            float s=.7f+(i%4)*.28f;
+            Part(root,PrimitiveType.Sphere,"Weathered valley boulder",
+                new Vector3(Mathf.Cos(a)*r,.35f,Mathf.Sin(a)*r+12f),
+                new Vector3(s*1.5f,s,s*.9f),new Color(.19f,.21f,.22f),
+                new Vector3(i*11f,i*37f,i*17f));
+        }
+        for(int i=0;i<11;i++)
+        {
+            float z=24f+i*1.1f, x=15f+Mathf.Sin(((z+30f)/3.2f)*.18f)*9f;
+            Part(root,PrimitiveType.Cube,"River crossing stone",new Vector3(x,.24f,z),
+                new Vector3(5.5f,.38f,.9f),new Color(.31f,.31f,.29f),null,false,true);
+        }
+    }
+
 }
