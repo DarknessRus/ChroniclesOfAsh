@@ -9,7 +9,7 @@ public static class AshReferenceLandscapeDetails
 {
     static Material MakeMaterial(string name, Color color, float metallic, float smoothness, bool emissive = false)
     {
-        Shader shader = Shader.Find("Standard");
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
         if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
         if (shader == null) shader = Shader.Find("Diffuse");
         var material = new Material(shader);
