@@ -12,6 +12,12 @@ REQUIRED = [
     Path("Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_nor_dx_1k.jpg"),
     Path("Unity/Assets/Resources/PBR/Bark/bark_brown_02_diff_2k.jpg"),
     Path("Unity/Assets/Resources/PBR/Bark/bark_brown_02_nor_dx_2k.jpg"),
+    Path("Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_diff_2k.jpg"),
+    Path("Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_nor_dx_2k.jpg"),
+    Path("Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_rough_2k.jpg"),
+    Path("Unity/Assets/Resources/PBR/Snow/snow_02_diff_2k.jpg"),
+    Path("Unity/Assets/Resources/PBR/Snow/snow_02_nor_dx_2k.jpg"),
+    Path("Unity/Assets/Resources/PBR/Snow/snow_02_rough_2k.jpg"),
 ]
 
 missing = []
