@@ -37,7 +37,7 @@ public static class AshRealisticWorldVisuals
 
     static Texture2D MakeGroundTexture()
     {
-        const int size = 256;
+        const int size = 512;
         var tex = new Texture2D(size, size, TextureFormat.RGB24, true, true);
         tex.name = "Ash Valley - layered soil, moss and stone";
         tex.wrapMode = TextureWrapMode.Repeat;
@@ -52,10 +52,12 @@ public static class AshRealisticWorldVisuals
             float soil = Mathf.PerlinNoise(u * 19f + 13f, v * 19f + 5f);
             float grit = Mathf.PerlinNoise(u * 67f + 4f, v * 67f + 17f);
             float grain = Mathf.PerlinNoise(u * 143f + 19f, v * 143f + 2f);
+            float microGrain = Mathf.PerlinNoise(u * 257f + 61f, v * 257f + 43f);
+            float fineGrain = Mathf.PerlinNoise(u * 389f + 27f, v * 389f + 71f);
             float moss = Mathf.PerlinNoise(u * 11f + 41f, v * 11f + 29f);
             float crackNoise = Mathf.PerlinNoise(u * 31f + 9f, v * 31f + 33f);
             float cracks = Mathf.Pow(1f - Mathf.Abs(crackNoise - .5f) * 2f, 13f);
-            float value = .50f + macro * .22f + soil * .14f + grit * .085f + grain * .045f - cracks * .12f;
+            float value = .47f + macro * .22f + soil * .14f + grit * .085f + grain * .045f + microGrain * .035f + fineGrain * .018f - cracks * .12f;
             Color earth = new Color(value * .78f, value * .79f, value * .70f);
             Color mossColor = new Color(value * .54f, value * .70f, value * .53f);
             float blend = Mathf.Clamp01((moss - .57f) * 3.1f);
@@ -95,7 +97,7 @@ public static class AshRealisticWorldVisuals
 
     static Texture2D MakeWaterTexture()
     {
-        const int size = 128;
+        const int size = 256;
         var tex = new Texture2D(size, size, TextureFormat.RGB24, true, true);
         tex.name = "Ash Valley - cloudy water ripples";
         tex.wrapMode = TextureWrapMode.Repeat;
@@ -107,8 +109,9 @@ public static class AshRealisticWorldVisuals
             float u = x / (float)size, v = y / (float)size;
             float broad = Mathf.PerlinNoise(u * 5f + 2f, v * 9f + 17f);
             float ripple = Mathf.PerlinNoise(u * 31f + 8f, v * 53f + 3f);
+            float fineRipple = Mathf.PerlinNoise(u * 97f + 14f, v * 151f + 29f);
             float streak = Mathf.Pow(Mathf.Clamp01(1f - Mathf.Abs(ripple - .5f) * 2f), 5f);
-            float c = .45f + broad * .23f + streak * .22f;
+            float c = .39f + broad * .22f + streak * .20f + fineRipple * .12f;
             pixels[y * size + x] = new Color(c * .55f, c * .78f, c * .83f);
         }
         tex.SetPixels(pixels);
