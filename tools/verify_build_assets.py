@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail fast if the reference artwork and real 4K world maps are present."""
+"""Fail fast if the reference artwork and all downloaded 4K world maps are present."""
 from pathlib import Path
 import sys
 from PIL import Image
@@ -9,10 +9,17 @@ REQUIRED = [
     Path("Unity/Assets/Resources/Menu/HeroSelectionBackground.png"),
     Path("Unity/Assets/Resources/PBR/GrassGround/grass_ground_diff_1k.jpg"),
     Path("Unity/Assets/Resources/PBR/GrassGround/grass_ground_nor_dx_1k.jpg"),
+    Path("Unity/Assets/Resources/PBR/GrassGround/grass_ground_rough_1k.jpg"),
     Path("Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_diff_1k.jpg"),
     Path("Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_nor_dx_1k.jpg"),
+    Path("Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_rough_1k.jpg"),
+    Path("Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_disp_1k.jpg"),
+    Path("Unity/Assets/Resources/PBR/MountainRock/aerial_rocks_02_diff_2k.jpg"),
+    Path("Unity/Assets/Resources/PBR/MountainRock/aerial_rocks_02_nor_dx_2k.jpg"),
+    Path("Unity/Assets/Resources/PBR/MountainRock/aerial_rocks_02_rough_2k.jpg"),
     Path("Unity/Assets/Resources/PBR/Bark/bark_brown_02_diff_2k.jpg"),
     Path("Unity/Assets/Resources/PBR/Bark/bark_brown_02_nor_dx_2k.jpg"),
+    Path("Unity/Assets/Resources/PBR/Bark/bark_brown_02_rough_2k.jpg"),
     Path("Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_diff_2k.jpg"),
     Path("Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_nor_dx_2k.jpg"),
     Path("Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_rough_2k.jpg"),
