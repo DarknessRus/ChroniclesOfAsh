@@ -61,7 +61,11 @@ public class AshPlayerController : MonoBehaviour
             foreach (var hit in hits)
             {
                 var enemy = hit.GetComponentInParent<AshEnemy>();
-                if (enemy != null) enemy.TakeDamage(25f);
+                if (enemy != null)
+                {
+                    AshDarkFantasyPresentation.SpawnDarkSpell(hit.ClosestPoint(transform.position + transform.forward * 1.35f));
+                    enemy.TakeDamage(25f);
+                }
             }
         }
     }
