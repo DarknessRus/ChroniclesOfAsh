@@ -10,7 +10,7 @@ public static class AshOpenWorld
 {
     static readonly Dictionary<Color, Material> materialCache = new Dictionary<Color, Material>();
     static Mesh pineCrownMesh;
-    const int Grid = 120;
+    const int Grid = 240;
     const float WorldSize = 280f;
 
     public static void Build(Transform root)
@@ -21,6 +21,7 @@ public static class AshOpenWorld
         BuildRockFields(root);
         BuildForests(root);
         BuildTrail(root);
+        AshRealisticWorldVisuals.Apply(root);
     }
 
     static void BuildTerrain(Transform root)
