@@ -66,8 +66,13 @@ public static class AshRealisticWorldVisuals
         Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
         if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
         if (shader == null) shader = renderer.sharedMaterial.shader;
+        // Use an untinted albedo so the scanned texture is clearly visible on mobile; the
+        // previous grey tint reduced its contrast enough to make the ground look almost flat.
         renderer.sharedMaterial = CreatePbrMaterial("Ash Valley - scanned ground PBR", shader,
-            groundTexture, groundNormal, groundSmoothness, new Color(.72f,.73f,.69f), new Vector2(1f,1f));
+            groundTexture, groundNormal, groundSmoothness, Color.white, new Vector2(1f,1f));
+        Debug.Log("[Ash Chronicles] Ground PBR applied: albedo=" + (groundTexture != null ? groundTexture.width + "x" + groundTexture.height : "generated fallback") +
+            ", normal=" + (groundNormal != null ? groundNormal.width + "x" + groundNormal.height : "generated fallback") +
+            ", shader=" + shader.name + ", renderer=" + renderer.enabled);
     }
 
     // 2K seamless albedo: layered damp earth, shale chips, grit, tiny roots and moss.
@@ -190,7 +195,7 @@ public static class AshRealisticWorldVisuals
                 Texture2D smoothness = mountain && mountainRockSmoothness != null ? mountainRockSmoothness : rockSmoothness;
                 float scale = Mathf.Max(item.lossyScale.x, item.lossyScale.z);
                 float tiling = mountain ? Mathf.Clamp(scale * .12f, 2.2f, 7.5f) : Mathf.Clamp(scale * .42f, 1.2f, 8f);
-                Color tint = mountain ? new Color(.72f,.75f,.78f) : new Color(.76f,.77f,.75f);
+                Color tint = mountain ? new Color(.94f,.96f,.98f) : new Color(.92f,.93f,.91f);
                 r.sharedMaterial = CreatePbrMaterial(mountain ? "Ash Cliffs - scanned mountain rock PBR" : "Ash Boulders - scanned stone PBR",
                     r.sharedMaterial.shader, albedo, normal, smoothness, tint, new Vector2(tiling,tiling));
             }
@@ -290,7 +295,7 @@ public static class AshRealisticWorldVisuals
         {
             mat.SetTexture("_BumpMap", normal);
             mat.EnableKeyword("_NORMALMAP");
-            if (mat.HasProperty("_BumpScale")) mat.SetFloat("_BumpScale", .78f);
+            if (mat.HasProperty("_BumpScale")) mat.SetFloat("_BumpScale", 1.1f);
         }
         if (smoothness != null && mat.HasProperty("_MetallicGlossMap"))
         {
