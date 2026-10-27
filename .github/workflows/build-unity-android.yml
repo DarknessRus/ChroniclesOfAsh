@@ -30,6 +30,13 @@ jobs:
           test -n "${{ secrets.UNITY_LICENSE }}" || (echo "Missing UNITY_LICENSE secret. Add Unity Personal license XML in repository Actions secrets." && exit 1)
           test -n "${{ secrets.UNITY_EMAIL }}" || (echo "Missing UNITY_EMAIL secret." && exit 1)
           test -n "${{ secrets.UNITY_PASSWORD }}" || (echo "Missing UNITY_PASSWORD secret." && exit 1)
+      - name: Raise file descriptor limit for Unity worker
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo "Current runner worker limits:"
+          sudo prlimit --pid "$PPID" --nofile=65536:65536
+          sudo prlimit --pid "$PPID" --nofile
       - uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
