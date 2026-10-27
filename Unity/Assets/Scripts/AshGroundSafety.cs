@@ -37,7 +37,9 @@ public static class AshGroundSafety
                 sphere.radius = 0.43f;
                 sphere.isTrigger = false;
             }
-            else if (item.name == "Jagged mountain cliff" || item.name == "Weathered boulder")
+            else if (item.name == "Jagged mountain cliff" || item.name == "Weathered boulder" ||
+                     item.name == "Layered valley cliff" || item.name == "Cliff ledge" ||
+                     item.name == "Distant jagged mountain" || item.name == "Mountain broken crown")
             {
                 var box = item.GetComponent<BoxCollider>();
                 if (box == null) box = item.gameObject.AddComponent<BoxCollider>();
@@ -57,11 +59,11 @@ public static class AshGroundSafety
         float x = Mathf.Clamp(worldPosition.x, -139.5f, 139.5f);
         float z = Mathf.Clamp(worldPosition.z - TerrainOffsetZ, -139.5f, 139.5f);
 
-        float broad = Mathf.Sin(x * 0.034f) * 2.4f + Mathf.Cos(z * 0.031f) * 2.2f;
-        float detail = (Mathf.PerlinNoise((x + 450f) * 0.035f, (z + 450f) * 0.035f) - 0.5f) * 2.6f
-                     + (Mathf.PerlinNoise((x + 90f) * 0.095f, (z + 90f) * 0.095f) - 0.5f) * 0.75f;
+        float broad = Mathf.Sin(x * 0.034f) * 4.6f + Mathf.Cos(z * 0.031f) * 4.1f;
+        float detail = (Mathf.PerlinNoise((x + 450f) * 0.035f, (z + 450f) * 0.035f) - 0.5f) * 3.8f
+                     + (Mathf.PerlinNoise((x + 90f) * 0.095f, (z + 90f) * 0.095f) - 0.5f) * 1.1f;
         float ridgeNoise = Mathf.PerlinNoise((x + 350f) * 0.012f, (z + 350f) * 0.012f);
-        float ridge = Mathf.Pow(Mathf.Clamp01((ridgeNoise - 0.43f) / 0.57f), 1.4f) * 13f;
+        float ridge = Mathf.Pow(Mathf.Clamp01((ridgeNoise - 0.40f) / 0.60f), 1.35f) * 22f;
         float riverDistance = Mathf.Abs(x - RiverX(z));
         float bank = Mathf.Clamp01((riverDistance - 4.2f) / 10f);
         float localY = Mathf.Lerp(-0.08f, broad + detail + ridge, bank);
