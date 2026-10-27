@@ -152,9 +152,14 @@ public static class AshRealisticWorldVisuals
         if (rockHeight == null) rockHeight = Resources.Load<Texture2D>("PBR/RockGround/rocks_ground_02_disp_1k");
         foreach (Transform item in root.GetComponentsInChildren<Transform>(true))
         {
-            if (item.name != "Jagged mountain cliff" && item.name != "Weathered boulder" &&
-                item.name != "Layered valley cliff" && item.name != "Distant jagged mountain" &&
-                item.name != "Mountain broken crown") continue;
+            bool isRockSurface =
+                item.name == "Jagged mountain cliff" ||
+                item.name == "Weathered boulder" ||
+                item.name == "Layered valley cliff" ||
+                item.name == "Distant jagged mountain" ||
+                item.name == "Mountain broken crown" ||
+                item.name.StartsWith("Distant snow mountain -");
+            if (!isRockSurface) continue;
             Renderer r = item.GetComponent<Renderer>();
             if (r == null || r.sharedMaterial == null) continue;
             if (rockTexture != null && rockNormal != null)
