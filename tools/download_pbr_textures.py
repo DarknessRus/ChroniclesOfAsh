@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Fetch high-detail CC0 2K PBR maps into Unity Resources for an offline Android build.
+"""Fetch 4K CC0 PBR maps into Unity Resources for an offline Android build.
 
-Unity keeps legacy local filenames for compatibility; download URLs must use
-Poly Haven's actual asset slug as the filename prefix.
+The local filenames intentionally retain legacy suffixes because AshRealisticWorldVisuals
+loads those paths by name. The downloaded image data itself is 4K, not 1K/2K.
 """
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent.parent
-BASE = "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k"
+BASE = "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/4k"
 MAPS = (
     ("grass_ground", "grass_ground", "diff", "Unity/Assets/Resources/PBR/GrassGround/grass_ground_diff_1k.jpg"),
     ("grass_ground", "grass_ground", "nor_dx", "Unity/Assets/Resources/PBR/GrassGround/grass_ground_nor_dx_1k.jpg"),
@@ -32,22 +32,35 @@ MAPS = (
     ("snow_02", "snow_02", "rough", "Unity/Assets/Resources/PBR/Snow/snow_02_rough_2k.jpg"),
 )
 
+downloaded = 0
+downloaded_bytes = 0
+failed = []
+
 for source_asset, local_prefix, map_name, relative_path in MAPS:
-    # Source names follow the Poly Haven asset slug, not the legacy local prefix.
-    url = f"{BASE}/{source_asset}/{source_asset}_{map_name}_2k.jpg"
+    url = f"{BASE}/{source_asset}/{source_asset}_{map_name}_4k.jpg"
     destination = ROOT / relative_path
     destination.parent.mkdir(parents=True, exist_ok=True)
     request = Request(url, headers={"User-Agent": "ChroniclesOfAsh-Android-Build/1.0"})
     try:
-        with urlopen(request, timeout=60) as response:
+        with urlopen(request, timeout=90) as response:
             data = response.read()
     except HTTPError as error:
         if error.code == 404:
-            print(f"Optional texture unavailable (404), keeping existing resource if present: {url}")
+            failed.append(f"{url} (HTTP 404)")
             continue
         raise
     if len(data) < 1024 or not data.startswith(bytes((0xFF, 0xD8, 0xFF))):
-        print(f"Optional texture invalid, skipping: {url}")
+        failed.append(f"{url} (not a valid JPEG or unexpectedly small)")
         continue
     destination.write_bytes(data)
-    print(f"Downloaded {local_prefix} {map_name} from 2K source: {len(data)} bytes")
+    downloaded += 1
+    downloaded_bytes += len(data)
+    print(f"Downloaded 4K {local_prefix} {map_name}: {len(data):,} bytes -> {relative_path}")
+
+if failed:
+    print("\nSome 4K PBR maps could not be downloaded:")
+    for item in failed:
+        print(f" - {item}")
+    raise SystemExit("PBR download incomplete; refusing to silently build with stale/low-resolution maps.")
+
+print(f"\nDownloaded {downloaded}/{len(MAPS)} 4K PBR maps ({downloaded_bytes:,} bytes total).")
