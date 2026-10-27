@@ -317,7 +317,8 @@ public class AshBootstrap : MonoBehaviour
         velocity.z=new ParticleSystem.MinMaxCurve(-.12f,.12f);
         ash.transform.position=new Vector3(0,2f,10f);
         var renderer=ash.GetComponent<ParticleSystemRenderer>();
-        renderer.material=new Material(Shader.Find("Sprites/Default"));
+        Material emberMaterial = AshMaterials.CreateSpriteMaterial();
+        if (emberMaterial != null) renderer.sharedMaterial = emberMaterial;
     }
     void BuildHeroSilhouette(Transform hero,int kind)
     {
@@ -368,13 +369,7 @@ public class AshBootstrap : MonoBehaviour
         string key = c.ToString() + "|" + smooth;
         Material cached;
         if (materialCache.TryGetValue(key, out cached) && cached != null) return cached;
-        var shader = Shader.Find("Standard");
-        if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
-        if (shader == null) shader = Shader.Find("UI/Default");
-        if (shader == null) throw new System.InvalidOperationException("No supported shader found for world materials.");
-        var m = new Material(shader);
-        m.color = c;
-        if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", 1f-smooth);
+        var m = AshMaterials.Create(c, 1f - smooth);
         materialCache[key] = m;
         return m;
     }
