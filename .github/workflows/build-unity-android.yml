@@ -1,4 +1,9 @@
 name: Build Unity Android APK
+
+# Keep only the newest Android build running when several commits arrive together.
+concurrency:
+  group: unity-android-${{ github.ref }}
+  cancel-in-progress: true
 on:
   workflow_dispatch:
   push:
