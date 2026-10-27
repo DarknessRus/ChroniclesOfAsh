@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Fetch 4K CC0 PBR maps into Unity Resources for an offline Android build.
+"""Fetch CC0 2K PBR maps into Unity Resources for the Android build.
 
-The local filenames intentionally retain legacy suffixes because AshRealisticWorldVisuals
-loads those paths by name. The downloaded image data itself is 4K, not 1K/2K.
+Local filenames retain legacy suffixes because AshRealisticWorldVisuals loads
+these paths by name. Downloaded texture images are 1K/2K, never above 2048px.
 """
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent.parent
-BASE = "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/4k"
+BASE = "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k"
 MAPS = (
     ("grass_ground", "grass_ground", "diff", "Unity/Assets/Resources/PBR/GrassGround/grass_ground_diff_1k.jpg"),
     ("grass_ground", "grass_ground", "nor_dx", "Unity/Assets/Resources/PBR/GrassGround/grass_ground_nor_dx_1k.jpg"),
@@ -37,7 +37,7 @@ downloaded_bytes = 0
 failed = []
 
 for source_asset, local_prefix, map_name, relative_path in MAPS:
-    url = f"{BASE}/{source_asset}/{source_asset}_{map_name}_4k.jpg"
+    url = f"{BASE}/{source_asset}/{source_asset}_{map_name}_2k.jpg"
     destination = ROOT / relative_path
     destination.parent.mkdir(parents=True, exist_ok=True)
     request = Request(url, headers={"User-Agent": "ChroniclesOfAsh-Android-Build/1.0"})
@@ -55,12 +55,12 @@ for source_asset, local_prefix, map_name, relative_path in MAPS:
     destination.write_bytes(data)
     downloaded += 1
     downloaded_bytes += len(data)
-    print(f"Downloaded 4K {local_prefix} {map_name}: {len(data):,} bytes -> {relative_path}")
+    print(f"Downloaded 2K {local_prefix} {map_name}: {len(data):,} bytes -> {relative_path}")
 
 if failed:
-    print("\nSome 4K PBR maps could not be downloaded:")
+    print("\nSome 2K PBR maps could not be downloaded:")
     for item in failed:
         print(f" - {item}")
-    raise SystemExit("PBR download incomplete; refusing to silently build with stale/low-resolution maps.")
+    raise SystemExit("PBR download incomplete; refusing to silently build with stale maps.")
 
-print(f"\nDownloaded {downloaded}/{len(MAPS)} 4K PBR maps ({downloaded_bytes:,} bytes total).")
+print(f"\nDownloaded {downloaded}/{len(MAPS)} 2K PBR maps ({downloaded_bytes:,} bytes total).")
