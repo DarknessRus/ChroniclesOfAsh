@@ -21,6 +21,7 @@ public static class AshOpenWorld
         BuildRockFields(root);
         BuildForests(root);
         BuildTrail(root);
+        AshReferenceLandscapeDetails.Build(root);
         AshRealisticWorldVisuals.Apply(root);
     }
 
