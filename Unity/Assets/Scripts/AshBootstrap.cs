@@ -316,7 +316,7 @@ public class AshBootstrap : MonoBehaviour
         cam.transform.position=new Vector3(0,5,-8);cam.transform.LookAt(player.transform.position+Vector3.up*1.2f);
         var follow=cam.gameObject.AddComponent<AshFollowCamera>();follow.target=player.transform;
         cam.fieldOfView=58;cam.farClipPlane=350;
-        RenderSettings.fog=true;RenderSettings.fogColor=new Color(.105f,.125f,.135f,1f);RenderSettings.fogMode=FogMode.ExponentialSquared;RenderSettings.fogDensity=.0065f;RenderSettings.ambientMode=UnityEngine.Rendering.AmbientMode.Flat;RenderSettings.ambientLight=new Color(.31f,.34f,.36f);
+        RenderSettings.fog=true;RenderSettings.fogColor=new Color(.105f,.125f,.135f,1f);RenderSettings.fogMode=FogMode.ExponentialSquared;RenderSettings.fogDensity=.0065f; AshDarkFantasyPresentation.ConfigureCamera(cam);RenderSettings.ambientMode=UnityEngine.Rendering.AmbientMode.Flat;RenderSettings.ambientLight=new Color(.31f,.34f,.36f);
         var light=new GameObject("Late dusk sun").AddComponent<Light>();light.type=LightType.Directional;light.intensity=.72f;light.color=new Color(.72f,.75f,.78f);light.transform.rotation=Quaternion.Euler(31,-32,0);RenderSettings.sun=light;
         AddWorldHUD();
     }
