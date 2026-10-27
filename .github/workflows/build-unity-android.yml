@@ -9,6 +9,7 @@ on:
   push:
     paths:
       - 'Unity/**'
+      - 'tools/**'
       - '.github/workflows/build-unity-android.yml'
 jobs:
   build:
@@ -16,6 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Generate pixel-based hero contour textures
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "rembg[cpu]==2.0.67" "opencv-python-headless==4.10.0.84" "Pillow>=10,<12"
+          python tools/generate_hero_contours.py
       - name: Check Unity secrets
         run: |
           test -n "${{ secrets.UNITY_LICENSE }}" || (echo "Missing UNITY_LICENSE secret. Add Unity Personal license XML in repository Actions secrets." && exit 1)
