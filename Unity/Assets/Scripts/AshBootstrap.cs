@@ -310,6 +310,7 @@ public class AshBootstrap : MonoBehaviour
         // Keep the CharacterController capsule for collision, but show only the assembled armor model.
         player.GetComponent<Renderer>().enabled = false;
         AshArtExpansion.DetailHero(player.transform, selectedHero);
+        AshDarkFantasyPresentation.AttachHeroAura(player.transform);
         var enemy=GameObject.CreatePrimitive(PrimitiveType.Capsule);enemy.name="Ash Wraith";enemy.transform.position=new Vector3(2,1,5);enemy.GetComponent<Renderer>().material=Mat(new Color(.35f,.12f,.16f),.8f);enemy.AddComponent<AshEnemy>();
         AshArtExpansion.DetailWraith(enemy.transform);
         var cam=new GameObject("Follow Camera").AddComponent<Camera>(); cam.tag="MainCamera";
