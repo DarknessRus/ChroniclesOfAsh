@@ -136,7 +136,7 @@ public static class AshRealisticWorldVisuals
             float riverX = Mathf.Sin((z - 45f) * .027f) * 15f + Mathf.Sin((z - 45f) * .071f) * 4f;
             if (Mathf.Abs(x - riverX) < 6.5f) continue;
             float n = Mathf.PerlinNoise((x + 400f) * .035f, (z + 400f) * .035f);
-            float y = -.02f + n * 1.2f;
+            float y = TerrainHeight(x, z);
             var clump = new GameObject("Wild grass and scrub");
             clump.transform.SetParent(root, false);
             clump.transform.position = new Vector3(x, y, z);
@@ -154,6 +154,19 @@ public static class AshRealisticWorldVisuals
                 mesh.GetComponent<MeshRenderer>().sharedMaterial = blade == 1 ? grassB : grassA;
             }
         }
+    }
+
+    static float TerrainHeight(float x, float worldZ)
+    {
+        float z = worldZ - 45f;
+        float broad = Mathf.Sin(x * .034f) * 2.4f + Mathf.Cos(z * .031f) * 2.2f;
+        float detail = (Mathf.PerlinNoise((x + 450f) * .035f, (z + 450f) * .035f) - .5f) * 2.6f
+                     + (Mathf.PerlinNoise((x + 90f) * .095f, (z + 90f) * .095f) - .5f) * .75f;
+        float ridgeNoise = Mathf.PerlinNoise((x + 350f) * .012f, (z + 350f) * .012f);
+        float ridge = Mathf.Pow(Mathf.Clamp01((ridgeNoise - .43f) / .57f), 1.4f) * 13f;
+        float riverX = Mathf.Sin(z * .027f) * 15f + Mathf.Sin(z * .071f) * 4f;
+        float bank = Mathf.Clamp01((Mathf.Abs(x - riverX) - 4.2f) / 10f);
+        return -.15f + Mathf.Lerp(-.08f, broad + detail + ridge, bank) + .035f;
     }
 
     static Mesh bladeMeshCache;
