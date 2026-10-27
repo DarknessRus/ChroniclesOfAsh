@@ -18,6 +18,10 @@ public static class AshRealisticWorldVisuals
     static Texture2D rockRoughness;
     static Texture2D rockSmoothness;
     static Texture2D rockHeight;
+    static Texture2D mountainRockTexture;
+    static Texture2D mountainRockNormal;
+    static Texture2D mountainRockRoughness;
+    static Texture2D mountainRockSmoothness;
     static Texture2D barkTexture;
     static Texture2D barkNormal;
     static Texture2D barkRoughness;
@@ -164,11 +168,15 @@ public static class AshRealisticWorldVisuals
             if (r == null || r.sharedMaterial == null) continue;
             if (rockTexture != null && rockNormal != null)
             {
+                bool mountain = item.name != "Weathered boulder";
+                Texture2D albedo = mountain && mountainRockTexture != null ? mountainRockTexture : rockTexture;
+                Texture2D normal = mountain && mountainRockNormal != null ? mountainRockNormal : rockNormal;
+                Texture2D smoothness = mountain && mountainRockSmoothness != null ? mountainRockSmoothness : rockSmoothness;
                 float scale = Mathf.Max(item.lossyScale.x, item.lossyScale.z);
-                float tiling = Mathf.Clamp(scale * .42f, 1.2f, 8f);
-                Color tint = item.name == "Weathered boulder" ? new Color(.76f,.77f,.75f) : new Color(.66f,.68f,.70f);
-                r.sharedMaterial = CreatePbrMaterial("Ash Cliffs - scanned rock PBR", r.sharedMaterial.shader,
-                    rockTexture, rockNormal, rockSmoothness, tint, new Vector2(tiling,tiling));
+                float tiling = mountain ? Mathf.Clamp(scale * .12f, 2.2f, 7.5f) : Mathf.Clamp(scale * .42f, 1.2f, 8f);
+                Color tint = mountain ? new Color(.72f,.75f,.78f) : new Color(.76f,.77f,.75f);
+                r.sharedMaterial = CreatePbrMaterial(mountain ? "Ash Cliffs - scanned mountain rock PBR" : "Ash Boulders - scanned stone PBR",
+                    r.sharedMaterial.shader, albedo, normal, smoothness, tint, new Vector2(tiling,tiling));
             }
             else
             {
