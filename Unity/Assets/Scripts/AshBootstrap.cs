@@ -125,7 +125,7 @@ public class AshBootstrap : MonoBehaviour
                 var tint = hit.GetComponent<Image>();
                 tint.color = new Color(1f, .20f, .015f, .035f);
                 tint.raycastTarget = false;
-                AddFireHeroContour(hit.transform);
+                AddHeroContourOverlay(menuRoot.transform, i);
             }
 
             var button = hit.AddComponent<Button>();
@@ -151,50 +151,32 @@ public class AshBootstrap : MonoBehaviour
         startButton.onClick.AddListener(StartGame);
     }
 
-    void AddFireHeroContour(Transform parent)
+    void AddHeroContourOverlay(Transform parent, int heroIndex)
     {
-        // Approximate the visible silhouette: head, shoulders, arms, torso and legs.
-        Vector2[] points = {
-            new Vector2(.43f,.88f), new Vector2(.37f,.85f), new Vector2(.34f,.80f),
-            new Vector2(.35f,.74f), new Vector2(.40f,.70f), new Vector2(.50f,.68f),
-            new Vector2(.60f,.70f), new Vector2(.65f,.75f), new Vector2(.66f,.80f),
-            new Vector2(.62f,.85f), new Vector2(.57f,.88f), new Vector2(.68f,.77f),
-            new Vector2(.78f,.70f), new Vector2(.84f,.59f), new Vector2(.81f,.55f),
-            new Vector2(.76f,.57f), new Vector2(.70f,.66f), new Vector2(.65f,.65f),
-            new Vector2(.64f,.53f), new Vector2(.66f,.43f), new Vector2(.71f,.31f),
-            new Vector2(.67f,.27f), new Vector2(.56f,.28f), new Vector2(.52f,.40f),
-            new Vector2(.48f,.40f), new Vector2(.44f,.28f), new Vector2(.33f,.27f),
-            new Vector2(.29f,.31f), new Vector2(.35f,.43f), new Vector2(.35f,.54f),
-            new Vector2(.32f,.65f), new Vector2(.27f,.65f), new Vector2(.21f,.57f),
-            new Vector2(.16f,.55f), new Vector2(.14f,.59f), new Vector2(.20f,.70f),
-            new Vector2(.31f,.77f), new Vector2(.38f,.76f), new Vector2(.43f,.88f)
-        };
-        for (int i = 0; i < points.Length - 1; i++)
+        // Generated from the source artwork by foreground segmentation in the build workflow.
+        // Each texture is full-canvas, so its outline aligns with the original hero pixels.
+        Texture2D contourTexture = Resources.Load<Texture2D>("Menu/HeroContour" + heroIndex);
+        if (contourTexture == null)
         {
-            CreateFireContourSegment(parent, points[i], points[i + 1], 12f, new Color(1f, .08f, .01f, .22f), "Fire glow");
-            CreateFireContourSegment(parent, points[i], points[i + 1], 5f, new Color(1f, .24f, .015f, .98f), "Flame edge");
-            CreateFireContourSegment(parent, points[i], points[i + 1], 2f, new Color(1f, .82f, .38f, 1f), "Hot core");
+            Debug.LogWarning("[Ash Chronicles] Precise hero contour texture missing for hero " + heroIndex +
+                ". Run the build workflow to generate it.");
+            return;
         }
-    }
 
-    void CreateFireContourSegment(Transform parent, Vector2 from, Vector2 to, float thickness, Color color, string label)
-    {
-        var go = new GameObject(label, typeof(RectTransform), typeof(Image));
-        go.transform.SetParent(parent, false);
-        var rect = go.GetComponent<RectTransform>();
-        rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
-        rect.pivot = new Vector2(.5f, .5f);
-        RectTransform parentRect = parent as RectTransform;
-        float width = parentRect.rect.width;
-        float height = parentRect.rect.height;
-        Vector2 a = new Vector2((from.x - .5f) * width, (from.y - .5f) * height);
-        Vector2 b = new Vector2((to.x - .5f) * width, (to.y - .5f) * height);
-        Vector2 delta = b - a;
-        rect.anchoredPosition = (a + b) * .5f;
-        rect.sizeDelta = new Vector2(delta.magnitude, thickness);
-        rect.localEulerAngles = new Vector3(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
-        var image = go.GetComponent<Image>();
-        image.color = color;
+        Sprite contourSprite = Sprite.Create(
+            contourTexture, new Rect(0, 0, contourTexture.width, contourTexture.height),
+            new Vector2(.5f, .5f), 100f);
+        var overlay = new GameObject("Pixel-accurate fire contour " + heroIndex,
+            typeof(RectTransform), typeof(Image));
+        overlay.transform.SetParent(parent, false);
+        var rect = overlay.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        var image = overlay.GetComponent<Image>();
+        image.sprite = contourSprite;
+        image.preserveAspect = false;
         image.raycastTarget = false;
     }
 
