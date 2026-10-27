@@ -9,15 +9,26 @@ public class AshPlayerController : MonoBehaviour
     CharacterController cc;
     Vector3 velocity;
 
+    const float GroundClearance = 0.04f;
+
     void Awake()
     {
+        // A primitive capsule already has a CapsuleCollider. Do not leave it stacked
+        // with CharacterController; the controller must be the sole player collider.
+        var primitiveCollider = GetComponent<CapsuleCollider>();
+        if (primitiveCollider != null) primitiveCollider.enabled = false;
+
         cc = GetComponent<CharacterController>();
         cc.height = 1.8f;
         cc.radius = 0.35f;
-        cc.skinWidth = 0.08f;
+        cc.center = Vector3.zero;
+        cc.skinWidth = 0.04f;
         cc.stepOffset = 0.3f;
         cc.minMoveDistance = 0f;
+        cc.detectCollisions = true;
+
         AshGroundSafety.PrepareWorld(transform);
+        SnapToGround(true);
     }
 
     void Update()
@@ -38,17 +49,10 @@ public class AshPlayerController : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
         cc.Move(velocity * Time.deltaTime);
 
-        // Backup grounding follows the same height function used to build the visible terrain.
-        // This prevents a missed thin-mesh collision from sending the player below the world.
-        float groundY = AshGroundSafety.SampleGroundHeight(transform.position);
-        float footY = transform.position.y - cc.height * 0.5f;
-        if (footY < groundY + 0.035f)
-        {
-            Vector3 groundedPosition = transform.position;
-            groundedPosition.y = groundY + cc.height * 0.5f + 0.035f;
-            transform.position = groundedPosition;
-            if (velocity.y < 0f) velocity.y = 0f;
-        }
+        // The procedural terrain is generated from this same height function.
+        // Reconcile the controller against it every frame so a missed mesh contact
+        // can never let the hero fall below the walkable ground.
+        SnapToGround(false);
 
         if (AshCombatButton.AttackPressed)
         {
@@ -59,6 +63,25 @@ public class AshPlayerController : MonoBehaviour
                 var enemy = hit.GetComponentInParent<AshEnemy>();
                 if (enemy != null) enemy.TakeDamage(25f);
             }
+        }
+    }
+
+    void SnapToGround(bool force)
+    {
+        float groundY = AshGroundSafety.SampleGroundHeight(transform.position);
+        float halfHeight = cc.height * 0.5f;
+        float targetY = groundY + halfHeight + GroundClearance;
+        float footY = transform.position.y - halfHeight;
+
+        // Snap on spawn, or when the feet touch/penetrate the generated terrain.
+        if (force || footY < groundY + GroundClearance)
+        {
+            Vector3 position = transform.position;
+            position.y = targetY;
+            cc.enabled = false;
+            transform.position = position;
+            cc.enabled = true;
+            if (velocity.y < 0f) velocity.y = 0f;
         }
     }
 
