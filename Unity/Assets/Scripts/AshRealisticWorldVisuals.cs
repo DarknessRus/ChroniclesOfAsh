@@ -215,7 +215,7 @@ public static class AshRealisticWorldVisuals
             Debug.LogError("[Ash Chronicles] Required 2K snow texture maps are missing from Resources/PBR/Snow.");
             return;
         }
-        Shader shader = Shader.Find("Standard");
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
         if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
         if (shader == null) return;
         Material snowMaterial = CreatePbrMaterial("Ash Distant Peaks - 2K snow PBR", shader,
@@ -242,7 +242,7 @@ public static class AshRealisticWorldVisuals
             return;
         }
 
-        Shader shader = Shader.Find("Standard");
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
         if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
         if (shader == null)
         {
