@@ -46,9 +46,42 @@ public sealed class AshUrpBuildSetup : IPreprocessBuildWithReport
             var renderer = AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(rendererPath);
             if (renderer == null)
             {
-                renderer = ScriptableObject.CreateInstance<UniversalRendererData>();
-                renderer.name = "AshMobileURP_Renderer";
-                AssetDatabase.CreateAsset(renderer, rendererPath);
+                // Prefer URP's own renderer factory so required shader resources are reloaded.
+                MethodInfo rendererFactory = null;
+                MethodInfo[] rendererFactories = typeof(UniversalRenderPipelineAsset).GetMethods(
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                foreach (MethodInfo candidate in rendererFactories)
+                {
+                    ParameterInfo[] parameters = candidate.GetParameters();
+                    if (candidate.Name == "CreateRendererAsset" && parameters.Length >= 2 &&
+                        parameters[0].ParameterType == typeof(string) && parameters[1].ParameterType.IsEnum)
+                    {
+                        rendererFactory = candidate;
+                        break;
+                    }
+                }
+                if (rendererFactory != null)
+                {
+                    try
+                    {
+                        ParameterInfo[] parameters = rendererFactory.GetParameters();
+                        object[] args = new object[parameters.Length];
+                        args[0] = pipelinePath;
+                        args[1] = Enum.Parse(parameters[1].ParameterType, "UniversalRenderer");
+                        for (int i = 2; i < parameters.Length; i++)
+                            args[i] = parameters[i].HasDefaultValue ? parameters[i].DefaultValue :
+                                (parameters[i].ParameterType == typeof(bool) ? (object)true :
+                                parameters[i].ParameterType == typeof(string) ? (object)"Renderer" : null);
+                        renderer = rendererFactory.Invoke(null, args) as ScriptableRendererData;
+                    }
+                    catch (Exception exception) { Debug.LogWarning("URP renderer factory did not initialize: " + exception.Message); }
+                }
+                if (renderer == null)
+                {
+                    renderer = ScriptableObject.CreateInstance<UniversalRendererData>();
+                    renderer.name = "AshMobileURP_Renderer";
+                    AssetDatabase.CreateAsset(renderer, rendererPath);
+                }
             }
 
             UniversalRenderPipelineAsset pipeline = null;
