@@ -23,6 +23,7 @@ public static class AshOpenWorld
         BuildTrail(root);
         AshReferenceLandscapeDetails.Build(root);
         AshRealisticWorldVisuals.Apply(root);
+        AshDarkFantasyPresentation.Apply(root);
     }
 
     static void BuildTerrain(Transform root)
