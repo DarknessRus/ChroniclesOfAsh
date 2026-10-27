@@ -54,7 +54,7 @@ public static class AshOpenWorld
             float tint = Mathf.PerlinNoise(wx * .075f + 12f, wz * .075f + 8f);
             float damp = Mathf.PerlinNoise(wx * .12f + 70f, wz * .12f + 20f);
             Color ground = Color.Lerp(new Color(.075f,.095f,.085f), new Color(.25f,.24f,.19f), tint);
-            colors[index] = Color.Lerp(ground, new Color(.20f,.21f,.20f), damp * .35f);
+            colors[index] = Color.white;
             if (x < Grid && z < Grid)
             {
                 int t = (z * Grid + x) * 6, a = index, b = index + Grid + 1;
