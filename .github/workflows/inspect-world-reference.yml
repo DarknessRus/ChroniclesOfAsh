@@ -1,0 +1,58 @@
+name: Inspect world reference pixels
+
+on:
+  push:
+    branches:
+      - inspect-world-reference-pixels
+    paths:
+      - '.github/workflows/inspect-world-reference.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source image
+        uses: actions/checkout@v4
+      - name: Prepare Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read original pixels and make visual preview
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          import base64, io, json
+          src = Path("reference/world_reference.png")
+          im = Image.open(src).convert("RGB")
+          original_size = im.size
+          preview = im.copy()
+          preview.thumbnail((480, 270), Image.Resampling.LANCZOS)
+          out = io.BytesIO()
+          preview.save(out, format="JPEG", quality=88, optimize=True)
+          encoded = base64.b64encode(out.getvalue()).decode("ascii")
+          Path("reference/world_reference_preview.b64").write_text(encoded + "\n", encoding="utf-8")
+          info = {
+            "source": str(src),
+            "original_dimensions": list(original_size),
+            "original_mode": "RGB",
+            "preview_dimensions": list(preview.size),
+            "preview_format": "JPEG",
+            "preview_bytes": len(out.getvalue()),
+            "source_bytes": src.stat().st_size
+          }
+          Path("reference/world_reference_pixel_info.json").write_text(json.dumps(info, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print("WORLD_REFERENCE_PIXEL_INFO=" + json.dumps(info))
+          print("Generated downsampled preview from the original PNG pixels.")
+          PY
+      - name: Commit preview data on inspection branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reference/world_reference_preview.b64 reference/world_reference_pixel_info.json
+          git commit -m "Generate visual preview from original world reference"
+          git push origin HEAD:inspect-world-reference-pixels
