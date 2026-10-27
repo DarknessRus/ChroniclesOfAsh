@@ -196,8 +196,19 @@ public class AshBootstrap : MonoBehaviour
         yield return null;
 
         if (!RunBuildStep("Создание героя и управления...", BuildPlayerAndHud)) yield break;
+
+        // Remove the loading overlay only after the player, camera and HUD exist.
+        // Otherwise it remains above the game and makes Start look unresponsive.
+        if (loadingRoot != null)
+        {
+            loadingRoot.SetActive(false);
+            Destroy(loadingRoot);
+            loadingRoot = null;
+            loadingLabel = null;
+        }
+
         gameStarting = false;
-        Debug.Log("[Ash Chronicles] Playable world is ready.");
+        Debug.Log("[Ash Chronicles] Playable world is ready and loading overlay was removed.");
     }
 
     bool RunBuildStep(string status, System.Action action)
@@ -375,7 +386,7 @@ public class AshBootstrap : MonoBehaviour
     }
     void AddWorldHUD()
     {
-        CreateCanvas();
+        // Reuse the existing canvas. A second canvas left the loading overlay above the world.
         var hud=new GameObject("World HUD");hud.transform.SetParent(canvas.transform,false);
         var r=hud.AddComponent<RectTransform>();r.anchorMin=Vector2.zero;r.anchorMax=Vector2.one;r.offsetMin=Vector2.zero;r.offsetMax=Vector2.zero;
         AddText(hud.transform,heroNames[selectedHero]+"  •  УРОВЕНЬ 1",23,new Vector2(.025f,.87f),new Vector2(.40f,.98f),new Color(.95f,.84f,.62f),TextAnchor.MiddleLeft,FontStyle.Bold);
