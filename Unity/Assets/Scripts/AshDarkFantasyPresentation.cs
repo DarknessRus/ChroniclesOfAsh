@@ -45,9 +45,9 @@ public static class AshDarkFantasyPresentation
         RenderSettings.fogColor = new Color(.055f, .075f, .10f);
         RenderSettings.fogDensity = .0032f;
 
-        Light key = null;
+        Light key = RenderSettings.sun;
         foreach (Light candidate in Object.FindObjectsOfType<Light>())
-            if (candidate.type == LightType.Directional) { key = candidate; break; }
+            if (key == null && candidate.type == LightType.Directional) { key = candidate; break; }
         if (key == null)
         {
             var go = new GameObject("Ash - cold moon key light");
