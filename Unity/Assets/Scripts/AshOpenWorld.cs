@@ -86,13 +86,34 @@ public static class AshOpenWorld
         var filter = terrain.AddComponent<MeshFilter>();
         filter.sharedMesh = mesh;
         var terrainRenderer = terrain.AddComponent<MeshRenderer>();
-        terrainRenderer.sharedMaterial = AshMaterials.Create(new Color(.72f, .73f, .69f), .08f);
         terrainRenderer.enabled = true;
+        terrainRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+        terrainRenderer.receiveShadows = true;
+
+        // Use an explicit URP Lit material and disable back-face culling on this generated
+        // landscape. This makes the ground visible even if a mobile graphics backend treats
+        // procedural triangle winding differently, while the collider still uses the same mesh.
+        Shader terrainShader = Shader.Find("Universal Render Pipeline/Lit");
+        if (terrainShader == null) terrainShader = Shader.Find("Standard");
+        if (terrainShader == null)
+            throw new System.InvalidOperationException("No compatible shader found for the open-world terrain.");
+        var terrainMaterial = new Material(terrainShader);
+        terrainMaterial.name = "Ash Valley - visible double-sided terrain";
+        Color terrainTint = new Color(.72f, .73f, .69f, 1f);
+        if (terrainMaterial.HasProperty("_BaseColor")) terrainMaterial.SetColor("_BaseColor", terrainTint);
+        if (terrainMaterial.HasProperty("_Color")) terrainMaterial.SetColor("_Color", terrainTint);
+        if (terrainMaterial.HasProperty("_Cull")) terrainMaterial.SetFloat("_Cull", 0f);
+        if (terrainMaterial.HasProperty("_Surface")) terrainMaterial.SetFloat("_Surface", 0f);
+        terrainRenderer.sharedMaterial = terrainMaterial;
+
         var terrainCollider = terrain.AddComponent<MeshCollider>();
         terrainCollider.sharedMesh = mesh;
+        terrainCollider.enabled = true;
         Debug.Log("[Ash Chronicles] Terrain mesh ready: vertices=" + vertices.Length +
             ", triangles=" + (triangles.Length / 3) + ", bounds=" + mesh.bounds +
-            ", renderer=" + terrainRenderer.enabled + ", collider=" + (terrainCollider.sharedMesh != null));
+            ", renderer=" + terrainRenderer.enabled + ", shader=" + terrainShader.name +
+            ", doubleSided=" + (terrainMaterial.HasProperty("_Cull") && terrainMaterial.GetFloat("_Cull") == 0f) +
+            ", collider=" + (terrainCollider.sharedMesh != null && terrainCollider.enabled));
     }
 
     static float RiverX(float z) { return Mathf.Sin(z * .027f) * 15f + Mathf.Sin(z * .071f) * 4f; }
