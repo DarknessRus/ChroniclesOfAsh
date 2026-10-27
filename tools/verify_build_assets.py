@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Fail fast if the intended menu artwork or high-detail world maps are missing."""
+"""Fail fast if the reference artwork and real 4K world maps are present."""
 from pathlib import Path
 import sys
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
@@ -22,6 +23,7 @@ REQUIRED = [
 
 missing = []
 total_bytes = 0
+pbr_count = 0
 for relative in REQUIRED:
     path = ROOT / relative
     if not path.is_file():
@@ -31,8 +33,22 @@ for relative in REQUIRED:
     if size < 1024:
         missing.append(f"{relative} (only {size} bytes)")
         continue
+    if path.suffix.lower() == ".jpg":
+        try:
+            with Image.open(path) as image:
+                width, height = image.size
+                image.verify()
+            if width < 3840 or height < 3840:
+                missing.append(f"{relative} (expected 4K, found {width}x{height})")
+                continue
+            pbr_count += 1
+            print(f"OK 4K {relative}: {width}x{height}, {size:,} bytes")
+        except Exception as error:
+            missing.append(f"{relative} (invalid image: {error})")
+            continue
+    else:
+        print(f"OK {relative}: {size:,} bytes")
     total_bytes += size
-    print(f"OK {relative}: {size:,} bytes")
 
 if missing:
     print("\nRESOURCE PREFLIGHT FAILED:", file=sys.stderr)
@@ -40,4 +56,4 @@ if missing:
         print(f" - {item}", file=sys.stderr)
     sys.exit(1)
 
-print(f"\nResource preflight passed: {len(REQUIRED)} required assets, {total_bytes:,} bytes total.")
+print(f"\nResource preflight passed: {len(REQUIRED)} required files, {pbr_count} verified 4K PBR maps, {total_bytes:,} bytes total.")
