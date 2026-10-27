@@ -1,6 +1,6 @@
 name: Build Unity Android APK
 
-# Do not cancel the contour-generation/build job while dependencies and masks are being prepared.
+# Generated contour textures are created during CI; keep the build running and allow those generated files.
 concurrency:
   group: unity-android-${{ github.ref }}
   cancel-in-progress: false
@@ -39,7 +39,7 @@ jobs:
           unityVersion: 2022.3.62f1
           buildName: ChroniclesOfAsh
           buildsPath: build
-          androidAppBundle: false
+          allowDirtyBuild: true
       - uses: actions/upload-artifact@v4
         with:
           name: ChroniclesOfAsh-Unity-APK
