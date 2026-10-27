@@ -63,7 +63,7 @@ public static class AshRealisticWorldVisuals
         if (groundNormal == null) groundNormal = MakeGroundNormal();
         if (groundRoughness != null && groundSmoothness == null)
             groundSmoothness = MakeSmoothnessMap(groundRoughness, "Ash Ground - smoothness from CC0 roughness");
-        Shader shader = Shader.Find("Standard");
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
         if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
         if (shader == null) shader = renderer.sharedMaterial.shader;
         renderer.sharedMaterial = CreatePbrMaterial("Ash Valley - scanned ground PBR", shader,
