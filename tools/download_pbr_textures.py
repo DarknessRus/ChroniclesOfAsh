@@ -24,9 +24,9 @@ MAPS = (
     ("bark_brown_02", "bark_brown_02", "diff", "Unity/Assets/Resources/PBR/Bark/bark_brown_02_diff_2k.jpg"),
     ("bark_brown_02", "bark_brown_02", "nor_dx", "Unity/Assets/Resources/PBR/Bark/bark_brown_02_nor_dx_2k.jpg"),
     ("bark_brown_02", "bark_brown_02", "rough", "Unity/Assets/Resources/PBR/Bark/bark_brown_02_rough_2k.jpg"),
-    ("forrest_ground_01", "forest_ground_01", "diff", "Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_diff_2k.jpg"),
-    ("forrest_ground_01", "forest_ground_01", "nor_dx", "Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_nor_dx_2k.jpg"),
-    ("forrest_ground_01", "forest_ground_01", "rough", "Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_rough_2k.jpg"),
+    ("forest_ground_01", "forest_ground_01", "diff", "Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_diff_2k.jpg"),
+    ("forest_ground_01", "forest_ground_01", "nor_dx", "Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_nor_dx_2k.jpg"),
+    ("forest_ground_01", "forest_ground_01", "rough", "Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_rough_2k.jpg"),
     ("snow_02", "snow_02", "diff", "Unity/Assets/Resources/PBR/Snow/snow_02_diff_2k.jpg"),
     ("snow_02", "snow_02", "nor_dx", "Unity/Assets/Resources/PBR/Snow/snow_02_nor_dx_2k.jpg"),
     ("snow_02", "snow_02", "rough", "Unity/Assets/Resources/PBR/Snow/snow_02_rough_2k.jpg"),
@@ -37,7 +37,7 @@ downloaded_bytes = 0
 failed = []
 
 for source_asset, local_prefix, map_name, relative_path in MAPS:
-    url = f"{BASE}/{source_asset}/{source_asset}_{map_name}_2k.jpg"
+    url = f"{BASE}/{source_asset}/{map_name}_2k.jpg"
     destination = ROOT / relative_path
     destination.parent.mkdir(parents=True, exist_ok=True)
     request = Request(url, headers={"User-Agent": "ChroniclesOfAsh-Android-Build/1.0"})
