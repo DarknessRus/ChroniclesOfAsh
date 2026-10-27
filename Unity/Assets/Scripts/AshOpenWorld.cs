@@ -107,7 +107,7 @@ public static class AshOpenWorld
             float h = 27f + Mathf.Abs(Mathf.Sin(i * 2.13f)) * 39f;
             float w = 21f + (i % 4) * 5.5f;
             float d = 19f + (i % 3) * 6f;
-            var go = CreateJaggedRock("Jagged mountain cliff", new Vector3(x, h * .43f, z + 45f),
+            var go = CreateJaggedRock(root, "Jagged mountain cliff", new Vector3(x, h * .43f, z + 45f),
                 new Vector3(w, h, d), new Color(.095f,.115f,.13f), 5, 2.8f);
             go.transform.rotation = Quaternion.Euler(0, i * 29f, Mathf.Sin(i) * 5f);
         }
@@ -127,13 +127,13 @@ public static class AshOpenWorld
             if (Mathf.Abs(x) < 5.5f && z > 4f && z < 86f) continue;
             float size = 0.8f + Mathf.Abs(Mathf.Sin(i * 3.7f)) * 2.4f;
             float y = -0.05f + size * .30f;
-            CreateJaggedRock("Weathered boulder", new Vector3(x, y, z),
+            CreateJaggedRock(root, "Weathered boulder", new Vector3(x, y, z),
                 new Vector3(size * (1.1f + (i%3)*.22f), size * (.65f + (i%4)*.1f), size),
                 i%4==0 ? new Color(.23f,.22f,.20f) : new Color(.13f,.15f,.16f), 2, .45f);
         }
     }
 
-    static GameObject CreateJaggedRock(string name, Vector3 position, Vector3 scale, Color color, int rings, float jaggedness)
+    static GameObject CreateJaggedRock(Transform root, string name, Vector3 position, Vector3 scale, Color color, int rings, float jaggedness)
     {
         // Shared low-poly rock topology with a perturbed crown and irregular footprint.
         int sides = 7;
