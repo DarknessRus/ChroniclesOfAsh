@@ -18,6 +18,10 @@ public static class AshRealisticWorldVisuals
     static Texture2D rockRoughness;
     static Texture2D rockSmoothness;
     static Texture2D rockHeight;
+    static Texture2D barkTexture;
+    static Texture2D barkNormal;
+    static Texture2D barkRoughness;
+    static Texture2D barkSmoothness;
     static Texture2D waterTexture;
     static Mesh bladeMeshCache;
 
@@ -25,6 +29,7 @@ public static class AshRealisticWorldVisuals
     {
         ApplyTerrainSurface(root);
         ApplyRockSurfaces(root);
+        ApplyBarkSurfaces(root);
         ApplyWaterSurface(root);
         ApplyAtmosphere();
         AddGroundDetail(root);
@@ -166,6 +171,33 @@ public static class AshRealisticWorldVisuals
                 if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", .08f);
                 if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", .08f);
             }
+        }
+    }
+
+    static void ApplyBarkSurfaces(Transform root)
+    {
+        barkTexture = Resources.Load<Texture2D>("PBR/Bark/bark_brown_02_diff_2k");
+        barkNormal = Resources.Load<Texture2D>("PBR/Bark/bark_brown_02_nor_dx_2k");
+        barkRoughness = Resources.Load<Texture2D>("PBR/Bark/bark_brown_02_rough_2k");
+        if (barkRoughness != null && barkSmoothness == null)
+            barkSmoothness = MakeSmoothnessMap(barkRoughness, "Ash Pine Bark - smoothness from CC0 roughness");
+
+        if (barkTexture == null || barkNormal == null)
+        {
+            Debug.LogError("[Ash Chronicles] Required 2K pine bark texture maps are missing from Resources/PBR/Bark.");
+            return;
+        }
+
+        Shader shader = Shader.Find("Standard");
+        if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
+        foreach (Transform item in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (item.name != "Pine trunk") continue;
+            Renderer renderer = item.GetComponent<Renderer>();
+            if (renderer == null) continue;
+            Material bark = CreatePbrMaterial("Ash Pines - 2K scanned bark PBR", shader,
+                barkTexture, barkNormal, barkSmoothness, new Color(.78f,.72f,.64f), new Vector2(1.8f, 2.2f));
+            renderer.sharedMaterial = bark;
         }
     }
 
