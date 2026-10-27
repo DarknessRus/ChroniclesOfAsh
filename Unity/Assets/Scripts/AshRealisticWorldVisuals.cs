@@ -190,14 +190,28 @@ public static class AshRealisticWorldVisuals
 
         Shader shader = Shader.Find("Standard");
         if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null)
+        {
+            foreach (Transform item in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (item.name != "Pine trunk") continue;
+                Renderer existing = item.GetComponent<Renderer>();
+                if (existing != null && existing.sharedMaterial != null) { shader = existing.sharedMaterial.shader; break; }
+            }
+        }
+        if (shader == null)
+        {
+            Debug.LogError("[Ash Chronicles] No compatible shader found for scanned pine bark.");
+            return;
+        }
+
+        Material barkMaterial = CreatePbrMaterial("Ash Pines - 2K scanned bark PBR", shader,
+            barkTexture, barkNormal, barkSmoothness, new Color(.78f,.72f,.64f), new Vector2(1.8f, 2.2f));
         foreach (Transform item in root.GetComponentsInChildren<Transform>(true))
         {
             if (item.name != "Pine trunk") continue;
             Renderer renderer = item.GetComponent<Renderer>();
-            if (renderer == null) continue;
-            Material bark = CreatePbrMaterial("Ash Pines - 2K scanned bark PBR", shader,
-                barkTexture, barkNormal, barkSmoothness, new Color(.78f,.72f,.64f), new Vector2(1.8f, 2.2f));
-            renderer.sharedMaterial = bark;
+            if (renderer != null) renderer.sharedMaterial = barkMaterial;
         }
     }
 
