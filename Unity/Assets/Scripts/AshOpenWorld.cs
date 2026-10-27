@@ -49,9 +49,7 @@ public static class AshOpenWorld
         mesh.vertices = vertices; mesh.uv = uv; mesh.colors = colors; mesh.triangles = triangles;
         mesh.RecalculateNormals();
         terrain.AddComponent<MeshFilter>().sharedMesh = mesh;
-        var terrainMat = new Material(Shader.Find("Standard"));
-        terrainMat.color = Color.white;
-        terrainMat.SetFloat("_Glossiness", .08f);
+        var terrainMat = AshMaterials.Create(Color.white, .08f);
         terrain.AddComponent<MeshRenderer>().sharedMaterial = terrainMat;
         terrain.AddComponent<MeshCollider>().sharedMesh = mesh;
 
@@ -86,9 +84,7 @@ public static class AshOpenWorld
         var m = new Mesh { name = "Winding river mesh" };
         m.vertices = vertices; m.triangles = triangles; m.RecalculateNormals();
         go.AddComponent<MeshFilter>().sharedMesh = m;
-        var mat = new Material(Shader.Find("Standard"));
-        mat.color = new Color(.035f,.19f,.24f,.88f);
-        mat.SetFloat("_Glossiness", .82f);
+        var mat = AshMaterials.Create(new Color(.035f,.19f,.24f,.88f), .82f);
         go.AddComponent<MeshRenderer>().sharedMaterial = mat;
     }
 
@@ -160,9 +156,7 @@ public static class AshOpenWorld
         if (materialCache.TryGetValue(color, out material) && material != null)
             return material;
 
-        material = new Material(Shader.Find("Standard"));
-        material.color = color;
-        material.SetFloat("_Glossiness", .12f);
+        material = AshMaterials.Create(color, .12f);
         materialCache[color] = material;
         return material;
     }
