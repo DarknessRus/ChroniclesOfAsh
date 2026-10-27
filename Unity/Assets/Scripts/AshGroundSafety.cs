@@ -21,8 +21,8 @@ public static class AshGroundSafety
         {
             var floor = new GameObject("Ground safety floor");
             floor.transform.SetParent(root, false);
-            floor.transform.position = new Vector3(0f, -8f, TerrainOffsetZ);
-            floor.transform.localScale = new Vector3(WorldSize, 1f, WorldSize);
+            floor.transform.position = new Vector3(0f, -20f, TerrainOffsetZ);
+            floor.transform.localScale = new Vector3(WorldSize, 2f, WorldSize);
             var box = floor.AddComponent<BoxCollider>();
             box.isTrigger = false;
         }
