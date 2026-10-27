@@ -24,6 +24,12 @@ MAPS = (
     ("bark_brown_02", "bark_brown_02", "diff", "Unity/Assets/Resources/PBR/Bark/bark_brown_02_diff_2k.jpg"),
     ("bark_brown_02", "bark_brown_02", "nor_dx", "Unity/Assets/Resources/PBR/Bark/bark_brown_02_nor_dx_2k.jpg"),
     ("bark_brown_02", "bark_brown_02", "rough", "Unity/Assets/Resources/PBR/Bark/bark_brown_02_rough_2k.jpg"),
+    ("forrest_ground_01", "forest_ground_01", "diff", "Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_diff_2k.jpg"),
+    ("forrest_ground_01", "forest_ground_01", "nor_dx", "Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_nor_dx_2k.jpg"),
+    ("forrest_ground_01", "forest_ground_01", "rough", "Unity/Assets/Resources/PBR/ForestGround/forest_ground_01_rough_2k.jpg"),
+    ("snow_02", "snow_02", "diff", "Unity/Assets/Resources/PBR/Snow/snow_02_diff_2k.jpg"),
+    ("snow_02", "snow_02", "nor_dx", "Unity/Assets/Resources/PBR/Snow/snow_02_nor_dx_2k.jpg"),
+    ("snow_02", "snow_02", "rough", "Unity/Assets/Resources/PBR/Snow/snow_02_rough_2k.jpg"),
 )
 
 for source_asset, local_prefix, map_name, relative_path in MAPS:
