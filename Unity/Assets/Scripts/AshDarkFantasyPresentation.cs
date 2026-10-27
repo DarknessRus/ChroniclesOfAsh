@@ -19,9 +19,18 @@ public static class AshDarkFantasyPresentation
         if (applied) return;
         applied = true;
         SetupLighting();
-        SetupPostProcessing();
+        SetupPostProcessing(Camera.main);
         SetupAmbientEmbers(root);
         BuildGothicRuins(root);
+    }
+
+    // The game creates its follow camera after constructing the world. Call this once
+    // that camera exists so the volume is actually enabled on the gameplay camera.
+    public static void ConfigureCamera(Camera cam)
+    {
+        if (cam == null) return;
+        SetupLighting();
+        SetupPostProcessing(cam);
     }
 
     static void SetupLighting()
@@ -53,21 +62,28 @@ public static class AshDarkFantasyPresentation
         key.renderMode = LightRenderMode.Auto;
     }
 
-    static void SetupPostProcessing()
+    static void SetupPostProcessing(Camera cam)
     {
-        Camera cam = Camera.main;
         if (cam == null)
         {
-            cam = Object.FindObjectOfType<Camera>();
-            if (cam != null && cam.tag != "MainCamera") cam.tag = "MainCamera";
+            cam = Camera.main;
+            if (cam == null)
+            {
+                cam = Object.FindObjectOfType<Camera>();
+                if (cam != null && cam.tag != "MainCamera") cam.tag = "MainCamera";
+            }
         }
-        if (cam == null) return;
 
-        var additional = cam.GetComponent<UniversalAdditionalCameraData>();
-        if (additional == null) additional = cam.gameObject.AddComponent<UniversalAdditionalCameraData>();
-        additional.renderPostProcessing = true;
-        additional.antialiasing = AntialiasingMode.FastApproximateAntialiasing;
+        if (cam != null)
+        {
+            var additional = cam.GetComponent<UniversalAdditionalCameraData>();
+            if (additional == null) additional = cam.gameObject.AddComponent<UniversalAdditionalCameraData>();
+            additional.renderPostProcessing = true;
+            additional.antialiasing = AntialiasingMode.FastApproximateAntialiasing;
+        }
 
+        // Create the global volume even if the camera is created later by the bootstrap.
+        if (volume != null) return;
         var go = new GameObject("Ash - Global Volume - Ashen Dread");
         Object.DontDestroyOnLoad(go);
         volume = go.AddComponent<Volume>();
