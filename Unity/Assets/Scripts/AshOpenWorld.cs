@@ -22,8 +22,10 @@ public static class AshOpenWorld
         BuildForests(root);
         BuildTrail(root);
         AshReferenceLandscapeDetails.Build(root);
-        AshRealisticWorldVisuals.Apply(root);
+        // Apply the presentation layer first, then assign scanned PBR surfaces last so
+        // later world styling cannot replace the ground/rock/bark materials.
         AshDarkFantasyPresentation.Apply(root);
+        AshRealisticWorldVisuals.Apply(root);
     }
 
     static void BuildTerrain(Transform root)
