@@ -11,6 +11,13 @@ public static class AshRealisticWorldVisuals
     const int NormalSize = 1024;
     static Texture2D groundTexture;
     static Texture2D groundNormal;
+    static Texture2D groundRoughness;
+    static Texture2D groundSmoothness;
+    static Texture2D rockTexture;
+    static Texture2D rockNormal;
+    static Texture2D rockRoughness;
+    static Texture2D rockSmoothness;
+    static Texture2D rockHeight;
     static Texture2D waterTexture;
     static Mesh bladeMeshCache;
 
@@ -29,28 +36,18 @@ public static class AshRealisticWorldVisuals
         if (terrain == null) return;
         Renderer renderer = terrain.GetComponent<Renderer>();
         if (renderer == null) return;
-
+        groundTexture = Resources.Load<Texture2D>("PBR/GrassGround/grass_ground_diff_1k");
+        groundNormal = Resources.Load<Texture2D>("PBR/GrassGround/grass_ground_nor_dx_1k");
+        groundRoughness = Resources.Load<Texture2D>("PBR/GrassGround/grass_ground_rough_1k");
         if (groundTexture == null) groundTexture = MakeGroundTexture();
         if (groundNormal == null) groundNormal = MakeGroundNormal();
+        if (groundRoughness != null && groundSmoothness == null)
+            groundSmoothness = MakeSmoothnessMap(groundRoughness, "Ash Ground - smoothness from CC0 roughness");
         Shader shader = Shader.Find("Standard");
         if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
         if (shader == null) shader = renderer.sharedMaterial.shader;
-        Material mat = new Material(shader);
-        mat.name = "Ash Valley - 2K photodetailed earth";
-        if (mat.HasProperty("_Color")) mat.SetColor("_Color", Color.white);
-        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", Color.white);
-        if (mat.HasProperty("_MainTex")) mat.SetTexture("_MainTex", groundTexture);
-        if (mat.HasProperty("_BaseMap")) mat.SetTexture("_BaseMap", groundTexture);
-        if (mat.HasProperty("_BumpMap"))
-        {
-            mat.SetTexture("_BumpMap", groundNormal);
-            mat.EnableKeyword("_NORMALMAP");
-            if (mat.HasProperty("_BumpScale")) mat.SetFloat("_BumpScale", .65f);
-        }
-        if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", .12f);
-        if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", .12f);
-        mat.mainTextureScale = new Vector2(2.4f, 2.4f);
-        renderer.sharedMaterial = mat;
+        renderer.sharedMaterial = CreatePbrMaterial("Ash Valley - scanned ground PBR", shader,
+            groundTexture, groundNormal, groundSmoothness, new Color(.72f,.73f,.69f), new Vector2(4.8f,4.8f));
     }
 
     // 2K seamless albedo: layered damp earth, shale chips, grit, tiny roots and moss.
@@ -142,7 +139,12 @@ public static class AshRealisticWorldVisuals
 
     static void ApplyRockSurfaces(Transform root)
     {
-        // Give the existing cliffs and boulders more granular, rough material response.
+        rockTexture = Resources.Load<Texture2D>("PBR/RockGround/rocks_ground_02_diff_1k");
+        rockNormal = Resources.Load<Texture2D>("PBR/RockGround/rocks_ground_02_nor_dx_1k");
+        rockRoughness = Resources.Load<Texture2D>("PBR/RockGround/rocks_ground_02_rough_1k");
+        if (rockRoughness != null && rockSmoothness == null)
+            rockSmoothness = MakeSmoothnessMap(rockRoughness, "Ash Rock - smoothness from CC0 roughness");
+        if (rockHeight == null) rockHeight = Resources.Load<Texture2D>("PBR/RockGround/rocks_ground_02_disp_1k");
         foreach (Transform item in root.GetComponentsInChildren<Transform>(true))
         {
             if (item.name != "Jagged mountain cliff" && item.name != "Weathered boulder" &&
@@ -150,10 +152,91 @@ public static class AshRealisticWorldVisuals
                 item.name != "Mountain broken crown") continue;
             Renderer r = item.GetComponent<Renderer>();
             if (r == null || r.sharedMaterial == null) continue;
-            Material m = r.sharedMaterial;
-            if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", .08f);
-            if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", .08f);
+            if (rockTexture != null && rockNormal != null)
+            {
+                float scale = Mathf.Max(item.lossyScale.x, item.lossyScale.z);
+                float tiling = Mathf.Clamp(scale * .42f, 1.2f, 8f);
+                Color tint = item.name == "Weathered boulder" ? new Color(.76f,.77f,.75f) : new Color(.66f,.68f,.70f);
+                r.sharedMaterial = CreatePbrMaterial("Ash Cliffs - scanned rock PBR", r.sharedMaterial.shader,
+                    rockTexture, rockNormal, rockSmoothness, tint, new Vector2(tiling,tiling));
+            }
+            else
+            {
+                Material m = r.sharedMaterial;
+                if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", .08f);
+                if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", .08f);
+            }
         }
+    }
+
+    static Material CreatePbrMaterial(string materialName, Shader shader, Texture2D albedo,
+        Texture2D normal, Texture2D smoothness, Color tint, Vector2 tiling)
+    {
+        Material mat = new Material(shader);
+        mat.name = materialName;
+        if (mat.HasProperty("_Color")) mat.SetColor("_Color", tint);
+        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", tint);
+        if (mat.HasProperty("_MainTex") && albedo != null)
+        {
+            mat.SetTexture("_MainTex", albedo);
+            mat.SetTextureScale("_MainTex", tiling);
+        }
+        if (mat.HasProperty("_BaseMap") && albedo != null)
+        {
+            mat.SetTexture("_BaseMap", albedo);
+            mat.SetTextureScale("_BaseMap", tiling);
+        }
+        if (normal != null && mat.HasProperty("_BumpMap"))
+        {
+            mat.SetTexture("_BumpMap", normal);
+            mat.EnableKeyword("_NORMALMAP");
+            if (mat.HasProperty("_BumpScale")) mat.SetFloat("_BumpScale", .78f);
+        }
+        if (smoothness != null && mat.HasProperty("_MetallicGlossMap"))
+        {
+            mat.SetTexture("_MetallicGlossMap", smoothness);
+            mat.EnableKeyword("_METALLICGLOSSMAP");
+            if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", 0f);
+            if (mat.HasProperty("_GlossMapScale")) mat.SetFloat("_GlossMapScale", 1f);
+            if (mat.HasProperty("_SmoothnessTextureChannel")) mat.SetFloat("_SmoothnessTextureChannel", 0f);
+        }
+        else
+        {
+            if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", .16f);
+            if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", .16f);
+        }
+        return mat;
+    }
+
+    static Texture2D MakeSmoothnessMap(Texture2D roughness, string textureName)
+    {
+        if (roughness == null) return null;
+        try
+        {
+            Color32[] pixels = roughness.GetPixels32();
+            for (int i = 0; i < pixels.Length; i++)
+                pixels[i] = new Color32(0, 0, 0, (byte)(255 - pixels[i].r));
+            Texture2D result = new Texture2D(roughness.width, roughness.height, TextureFormat.RGBA32, true, true);
+            result.name = textureName;
+            result.wrapMode = TextureWrapMode.Repeat;
+            result.filterMode = FilterMode.Trilinear;
+            result.anisoLevel = 8;
+            result.SetPixels32(pixels);
+            result.Apply(true, true);
+            return result;
+        }
+        catch { return null; }
+    }
+
+    public static float SampleRockHeight(float u, float v)
+    {
+        if (rockHeight == null) rockHeight = Resources.Load<Texture2D>("PBR/RockGround/rocks_ground_02_disp_1k");
+        if (rockHeight != null)
+        {
+            try { return rockHeight.GetPixelBilinear(Mathf.Repeat(u, 1f), Mathf.Clamp01(v)).grayscale; }
+            catch { }
+        }
+        return Mathf.PerlinNoise(u * 11.7f + 2.3f, v * 13.1f + 7.9f);
     }
 
     static void ApplyWaterSurface(Transform root)

@@ -18,6 +18,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Download CC0 PBR texture maps
+        run: python tools/download_pbr_textures.py
       - name: Generate pixel-based hero contour textures
         run: |
           python -m pip install --upgrade pip

@@ -109,7 +109,7 @@ public static class AshOpenWorld
             float w = 21f + (i % 4) * 5.5f;
             float d = 19f + (i % 3) * 6f;
             var go = CreateJaggedRock(root, "Jagged mountain cliff", new Vector3(x, h * .43f, z + 45f),
-                new Vector3(w, h, d), new Color(.095f,.115f,.13f), 5, 2.8f);
+                new Vector3(w, h, d), new Color(.095f,.115f,.13f), 9, 2.8f);
             go.transform.rotation = Quaternion.Euler(0, i * 29f, Mathf.Sin(i) * 5f);
         }
     }
@@ -130,49 +130,78 @@ public static class AshOpenWorld
             float y = -0.05f + size * .30f;
             CreateJaggedRock(root, "Weathered boulder", new Vector3(x, y, z),
                 new Vector3(size * (1.1f + (i%3)*.22f), size * (.65f + (i%4)*.1f), size),
-                i%4==0 ? new Color(.23f,.22f,.20f) : new Color(.13f,.15f,.16f), 2, .45f);
+                i%4==0 ? new Color(.23f,.22f,.20f) : new Color(.13f,.15f,.16f), 4, .75f);
         }
     }
 
     static GameObject CreateJaggedRock(Transform root, string name, Vector3 position, Vector3 scale, Color color, int rings, float jaggedness)
     {
-        // Shared low-poly rock topology with a perturbed crown and irregular footprint.
-        int sides = 9;
+        int sides = Mathf.Clamp(rings * 2 + 8, 16, 24);
         var verts = new Vector3[sides * rings + 2];
+        var uv = new Vector2[verts.Length];
         var tris = new List<int>();
-        verts[0] = new Vector3(0f, .5f, 0f);
-        verts[1] = new Vector3(0f, -.5f, 0f);
+        verts[0] = new Vector3(0f, -.5f, 0f);
+        verts[1] = new Vector3(0f, .5f, 0f);
+        uv[0] = new Vector2(.5f, 0f);
+        uv[1] = new Vector2(.5f, 1f);
         for (int ring = 0; ring < rings; ring++)
         {
             float t = (float)ring / Mathf.Max(1, rings - 1);
-            float y = Mathf.Lerp(-.42f, .34f, t);
+            float y = Mathf.Lerp(-.44f, .42f, t);
             float rad = Mathf.Sin((t * .88f + .12f) * Mathf.PI * .5f) * .5f;
             for (int s = 0; s < sides; s++)
             {
-                float angle = (s/(float)sides) * Mathf.PI * 2f;
-                float jitter = 1f + (Mathf.PerlinNoise((s+13)*.71f,(ring+7)*.53f)-.5f)*.48f;
-                verts[2 + ring*sides + s] = new Vector3(Mathf.Cos(angle)*rad*jitter, y + (Mathf.PerlinNoise(s*1.3f,ring*1.7f)-.5f)*.08f, Mathf.Sin(angle)*rad*jitter);
+                float u = s / (float)sides;
+                float angle = u * Mathf.PI * 2f;
+                float noise = Mathf.PerlinNoise((s + 13) * .71f, (ring + 7) * .53f) - .5f;
+                float height = AshRealisticWorldVisuals.SampleRockHeight(u, t);
+                float radial = 1f + noise * .12f * jaggedness + (height - .5f) * .075f * jaggedness;
+                float vertical = (Mathf.PerlinNoise(s * 1.3f, ring * 1.7f) - .5f) * .07f * jaggedness
+                               + (height - .5f) * .055f * jaggedness;
+                verts[2 + ring * sides + s] = new Vector3(
+                    Mathf.Cos(angle) * rad * radial, y + vertical, Mathf.Sin(angle) * rad * radial);
+                uv[2 + ring * sides + s] = new Vector2(u, t);
             }
         }
-        for (int s=0;s<sides;s++)
+        for (int s = 0; s < sides; s++)
         {
-            int next=(s+1)%sides;
-            tris.Add(0); tris.Add(2+s); tris.Add(2+next);
-            tris.Add(1); tris.Add(2+(rings-1)*sides+next); tris.Add(2+(rings-1)*sides+s);
+            int next = (s + 1) % sides;
+            int bottomA = 2 + s;
+            int bottomB = 2 + next;
+            int topA = 2 + (rings - 1) * sides + s;
+            int topB = 2 + (rings - 1) * sides + next;
+            tris.Add(0); tris.Add(bottomB); tris.Add(bottomA);
+            tris.Add(1); tris.Add(topA); tris.Add(topB);
         }
-        for(int ring=0;ring<rings-1;ring++) for(int s=0;s<sides;s++)
+        for (int ring = 0; ring < rings - 1; ring++)
+        for (int s = 0; s < sides; s++)
         {
-            int n=(s+1)%sides, a=2+ring*sides+s, b=2+ring*sides+n, c=2+(ring+1)*sides+s, d=2+(ring+1)*sides+n;
-            tris.Add(a);tris.Add(c);tris.Add(b); tris.Add(b);tris.Add(c);tris.Add(d);
+            int n = (s + 1) % sides;
+            int a = 2 + ring * sides + s;
+            int b = 2 + ring * sides + n;
+            int c = 2 + (ring + 1) * sides + s;
+            int d = 2 + (ring + 1) * sides + n;
+            tris.Add(a); tris.Add(c); tris.Add(b);
+            tris.Add(b); tris.Add(c); tris.Add(d);
         }
-        var mesh=new Mesh { name=name+" mesh" }; mesh.vertices=verts; mesh.triangles=tris.ToArray(); mesh.RecalculateNormals();
-        var go=new GameObject(name); go.transform.SetParent(root,false); go.transform.position=position; go.transform.localScale=scale;
-        go.AddComponent<MeshFilter>().sharedMesh=mesh; go.AddComponent<MeshRenderer>().sharedMaterial=MaterialFor(color);
-        var collider=go.AddComponent<MeshCollider>(); collider.sharedMesh=mesh;
+        var mesh = new Mesh { name = name + " - detailed displaced mesh" };
+        mesh.vertices = verts;
+        mesh.uv = uv;
+        mesh.triangles = tris.ToArray();
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        var go = new GameObject(name);
+        go.transform.SetParent(root, false);
+        go.transform.position = position;
+        go.transform.localScale = scale;
+        go.AddComponent<MeshFilter>().sharedMesh = mesh;
+        go.AddComponent<MeshRenderer>().sharedMaterial = MaterialFor(color);
+        var collider = go.AddComponent<MeshCollider>();
+        collider.sharedMesh = mesh;
         return go;
     }
 
-    static void BuildForests(Transform root)
+        static void BuildForests(Transform root)
     {
         if (pineCrownMesh == null) pineCrownMesh = MakePineMesh();
         for (int i = 0; i < 300; i++)
