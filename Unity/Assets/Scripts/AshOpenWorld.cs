@@ -40,11 +40,11 @@ public static class AshOpenWorld
         {
             float wx = ((float)x / Grid - .5f) * WorldSize;
             float wz = ((float)z / Grid - .5f) * WorldSize;
-            float broad = Mathf.Sin(wx * .034f) * 2.4f + Mathf.Cos(wz * .031f) * 2.2f;
-            float detail = (Mathf.PerlinNoise((wx + 450f) * .035f, (wz + 450f) * .035f) - .5f) * 2.6f
-                         + (Mathf.PerlinNoise((wx + 90f) * .095f, (wz + 90f) * .095f) - .5f) * .75f;
+            float broad = Mathf.Sin(wx * .034f) * 4.6f + Mathf.Cos(wz * .031f) * 4.1f;
+            float detail = (Mathf.PerlinNoise((wx + 450f) * .035f, (wz + 450f) * .035f) - .5f) * 3.8f
+                         + (Mathf.PerlinNoise((wx + 90f) * .095f, (wz + 90f) * .095f) - .5f) * 1.1f;
             float ridgeNoise = Mathf.PerlinNoise((wx + 350f) * .012f, (wz + 350f) * .012f);
-            float ridge = Mathf.Pow(Mathf.Clamp01((ridgeNoise - .43f) / .57f), 1.4f) * 13f;
+            float ridge = Mathf.Pow(Mathf.Clamp01((ridgeNoise - .40f) / .60f), 1.35f) * 22f;
             float riverDistance = Mathf.Abs(wx - RiverX(wz));
             float bank = Mathf.Clamp01((riverDistance - 4.2f) / 10f);
             float y = Mathf.Lerp(-.08f, broad + detail + ridge, bank);
