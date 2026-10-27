@@ -1,9 +1,9 @@
 name: Build Unity Android APK
 
-# Keep only the newest Android build running when several commits arrive together.
+# Do not cancel the contour-generation/build job while dependencies and masks are being prepared.
 concurrency:
   group: unity-android-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 on:
   workflow_dispatch:
   push:
@@ -15,6 +15,7 @@ jobs:
   build:
     name: Unity Android build
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Generate pixel-based hero contour textures
