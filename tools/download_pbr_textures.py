@@ -17,6 +17,9 @@ MAPS = (
     ("rock_ground_02", "rocks_ground_02", "nor_dx", "Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_nor_dx_1k.jpg"),
     ("rock_ground_02", "rocks_ground_02", "rough", "Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_rough_1k.jpg"),
     ("rock_ground_02", "rocks_ground_02", "disp", "Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_disp_1k.jpg"),
+    ("bark_brown_02", "bark_brown_02", "diff", "Unity/Assets/Resources/PBR/Bark/bark_brown_02_diff_2k.jpg"),
+    ("bark_brown_02", "bark_brown_02", "nor_dx", "Unity/Assets/Resources/PBR/Bark/bark_brown_02_nor_dx_2k.jpg"),
+    ("bark_brown_02", "bark_brown_02", "rough", "Unity/Assets/Resources/PBR/Bark/bark_brown_02_rough_2k.jpg"),
 )
 
 for source_asset, local_prefix, map_name, relative_path in MAPS:
