@@ -118,6 +118,24 @@ public class AshBootstrap : MonoBehaviour
             float x1 = x0 + .225f;
             var hit = AddPanel(menuRoot.transform, new Vector2(x0,.20f), new Vector2(x1,.79f), new Color(1,1,1,0));
             hit.name = "Select hero " + i;
+
+            // Clearly mark the currently selected hero without changing the reference artwork.
+            if (i == selectedHero)
+            {
+                var tint = hit.GetComponent<Image>();
+                tint.color = new Color(1f, .43f, .08f, .16f);
+                tint.raycastTarget = false;
+                var outline = hit.AddComponent<Outline>();
+                outline.effectColor = new Color(1f, .57f, .12f, .98f);
+                outline.effectDistance = new Vector2(5f, 5f);
+
+                // Small glowing marker at the bottom of the selected hero's area.
+                var marker = AddPanel(hit.transform, new Vector2(.12f, .025f), new Vector2(.88f, .045f),
+                    new Color(1f, .55f, .12f, .98f));
+                marker.name = "Selected hero marker";
+                marker.GetComponent<Image>().raycastTarget = false;
+            }
+
             var button = hit.AddComponent<Button>();
             button.targetGraphic = hit.GetComponent<Image>();
             var colors = button.colors;
