@@ -159,7 +159,8 @@ public class AshBootstrap : MonoBehaviour
         var start = AddPanel(menuRoot.transform, new Vector2(.395f,.025f), new Vector2(.605f,.105f), new Color(.20f,.035f,.012f,.98f));
         start.name = "Start Game ornate button";
         start.AddComponent<Outline>().effectColor = new Color(.96f,.39f,.08f,1f);
-        AddPanel(start.transform, new Vector2(.025f,.08f), new Vector2(.975f,.105f), new Color(.95f,.46f,.12f,1f));
+        var startTopTrim = AddPanel(start.transform, new Vector2(.025f,.08f), new Vector2(.975f,.105f), new Color(.95f,.46f,.12f,1f));
+        startTopTrim.GetComponent<Image>().raycastTarget = false;
         AddText(start.transform, "ВЫБРАТЬ", 25, new Vector2(.02f,.02f), new Vector2(.98f,.98f),
             new Color(1f,.84f,.62f), TextAnchor.MiddleCenter, FontStyle.Bold);
         var startButton = start.AddComponent<Button>();
