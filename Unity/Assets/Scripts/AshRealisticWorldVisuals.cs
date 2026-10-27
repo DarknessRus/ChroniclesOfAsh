@@ -56,7 +56,7 @@ public static class AshRealisticWorldVisuals
         if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
         if (shader == null) shader = renderer.sharedMaterial.shader;
         renderer.sharedMaterial = CreatePbrMaterial("Ash Valley - scanned ground PBR", shader,
-            groundTexture, groundNormal, groundSmoothness, new Color(.72f,.73f,.69f), new Vector2(4.8f,4.8f));
+            groundTexture, groundNormal, groundSmoothness, new Color(.72f,.73f,.69f), new Vector2(1f,1f));
     }
 
     // 2K seamless albedo: layered damp earth, shale chips, grit, tiny roots and moss.
@@ -148,6 +148,11 @@ public static class AshRealisticWorldVisuals
 
     static void ApplyRockSurfaces(Transform root)
     {
+        mountainRockTexture = Resources.Load<Texture2D>("PBR/MountainRock/aerial_rocks_02_diff_2k");
+        mountainRockNormal = Resources.Load<Texture2D>("PBR/MountainRock/aerial_rocks_02_nor_dx_2k");
+        mountainRockRoughness = Resources.Load<Texture2D>("PBR/MountainRock/aerial_rocks_02_rough_2k");
+        if (mountainRockRoughness != null && mountainRockSmoothness == null)
+            mountainRockSmoothness = MakeSmoothnessMap(mountainRockRoughness, "Ash Mountain - smoothness from CC0 roughness");
         rockTexture = Resources.Load<Texture2D>("PBR/RockGround/rocks_ground_02_diff_1k");
         rockNormal = Resources.Load<Texture2D>("PBR/RockGround/rocks_ground_02_nor_dx_1k");
         rockRoughness = Resources.Load<Texture2D>("PBR/RockGround/rocks_ground_02_rough_1k");
