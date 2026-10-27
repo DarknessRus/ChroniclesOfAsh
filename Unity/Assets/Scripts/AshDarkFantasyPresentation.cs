@@ -251,6 +251,36 @@ public static class AshDarkFantasyPresentation
         flame.GetComponent<Renderer>().sharedMaterial = glowMaterial;
     }
 
+    /// <summary>Attaches a low-cost spectral aura to the hero for a persistent status-effect look.</summary>
+    public static void AttachHeroAura(Transform target)
+    {
+        if (target == null || target.Find("Ash VFX - spectral hero aura") != null) return;
+        var go = new GameObject("Ash VFX - spectral hero aura");
+        go.transform.SetParent(target, false);
+        go.transform.localPosition = new Vector3(0f, .9f, 0f);
+        var ps = go.AddComponent<ParticleSystem>();
+        var main = ps.main;
+        main.loop = true;
+        main.startLifetime = new ParticleSystem.MinMaxCurve(.8f, 1.6f);
+        main.startSpeed = new ParticleSystem.MinMaxCurve(.05f, .22f);
+        main.startSize = new ParticleSystem.MinMaxCurve(.035f, .09f);
+        main.startColor = new ParticleSystem.MinMaxGradient(new Color(.28f,.48f,1f,.7f), new Color(.62f,.12f,.95f,.65f));
+        main.maxParticles = 64;
+        main.simulationSpace = ParticleSystemSimulationSpace.Local;
+        var emission = ps.emission;
+        emission.rateOverTime = 10f;
+        var shape = ps.shape;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius = .52f;
+        shape.radiusThickness = 0f;
+        var velocity = ps.velocityOverLifetime;
+        velocity.enabled = true;
+        velocity.y = new ParticleSystem.MinMaxCurve(.08f,.28f);
+        var renderer = go.GetComponent<ParticleSystemRenderer>();
+        renderer.sharedMaterial = MakeGlowMaterial(new Color(.42f,.28f,1f,.8f));
+        ps.Play();
+    }
+
     /// <summary>Creates a short-lived dark-magic burst at a world position.</summary>
     public static ParticleSystem SpawnDarkSpell(Vector3 position, Transform parent = null)
     {
