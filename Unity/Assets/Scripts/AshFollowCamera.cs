@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 /// <summary>Third-person follow camera with right-side swipe orbit controls for mobile.</summary>
+[RequireComponent(typeof(Camera))]
 public class AshFollowCamera : MonoBehaviour
 {
     public Transform target;
@@ -17,13 +18,41 @@ public class AshFollowCamera : MonoBehaviour
     int lookFingerId = -1;
     bool mouseLooking;
     Vector3 currentOffset;
+    Camera gameplayCamera;
+
+    void Awake()
+    {
+        gameplayCamera = GetComponent<Camera>();
+        // The world is generated at runtime, so no editor-authored camera settings
+        // can be relied on. Explicitly enable rendering of every runtime world layer.
+        gameplayCamera.enabled = true;
+        gameplayCamera.cullingMask = ~0;
+        gameplayCamera.nearClipPlane = 0.1f;
+        gameplayCamera.farClipPlane = 500f;
+        gameplayCamera.clearFlags = CameraClearFlags.SolidColor;
+        gameplayCamera.backgroundColor = new Color(0.018f, 0.025f, 0.045f, 1f);
+        if (gameplayCamera.tag != "MainCamera") gameplayCamera.tag = "MainCamera";
+        Debug.Log("[Ash Chronicles] Gameplay camera configured: enabled=" + gameplayCamera.enabled +
+            ", cullingMask=" + gameplayCamera.cullingMask + ", near=" + gameplayCamera.nearClipPlane +
+            ", far=" + gameplayCamera.farClipPlane);
+    }
 
     void Start()
     {
+        if (target == null)
+        {
+            Debug.LogError("[Ash Chronicles] Follow camera has no target; runtime world cannot be framed.");
+            return;
+        }
+
         Vector3 angles = Quaternion.LookRotation(-offset).eulerAngles;
-        yaw = target != null ? target.eulerAngles.y : angles.y;
+        yaw = target.eulerAngles.y;
         pitch = Mathf.Clamp(Mathf.Atan2(offset.y, -offset.z) * Mathf.Rad2Deg, minPitch, maxPitch);
         currentOffset = Quaternion.Euler(pitch, yaw, 0f) * new Vector3(0f, 0f, -offset.magnitude);
+        transform.position = target.position + currentOffset;
+        transform.LookAt(target.position + Vector3.up * 1.15f);
+        Debug.Log("[Ash Chronicles] Camera target=" + target.name + ", targetPosition=" + target.position +
+            ", cameraPosition=" + transform.position);
     }
 
     void LateUpdate()
@@ -40,26 +69,19 @@ public class AshFollowCamera : MonoBehaviour
 
     void ReadLookInput()
     {
-        // Touches beginning on the right half control the camera. The left half remains
-        // dedicated to movement; UI buttons are excluded so attacks do not rotate the view.
         for (int i = 0; i < Input.touchCount; i++)
         {
             Touch touch = Input.GetTouch(i);
             if (touch.phase == TouchPhase.Began && lookFingerId == -1 &&
-                touch.position.x >= Screen.width * 0.42f &&
-                !IsOverUI(touch.fingerId))
-            {
+                touch.position.x >= Screen.width * 0.42f && !IsOverUI(touch.fingerId))
                 lookFingerId = touch.fingerId;
-            }
 
             if (touch.fingerId != lookFingerId) continue;
-
             if (touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary)
             {
                 yaw += touch.deltaPosition.x * swipeSensitivity;
                 pitch = Mathf.Clamp(pitch - touch.deltaPosition.y * swipeSensitivity, minPitch, maxPitch);
             }
-
             if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
                 lookFingerId = -1;
         }
