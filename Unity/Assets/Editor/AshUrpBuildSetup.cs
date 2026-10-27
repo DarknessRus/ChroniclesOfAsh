@@ -70,8 +70,6 @@ public sealed class AshUrpBuildSetup : IPreprocessBuildWithReport
 
             pipeline.name = "AshMobileURP";
             pipeline.supportsHDR = true;
-            pipeline.supportsMainLightShadows = true;
-            pipeline.supportsAdditionalLightShadows = false;
             pipeline.shadowDistance = 55f;
             pipeline.shadowCascadeCount = 2;
             pipeline.renderScale = 1f;
