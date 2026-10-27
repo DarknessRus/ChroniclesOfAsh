@@ -25,6 +25,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install "rembg[cpu]==2.0.67" "opencv-python-headless==4.10.0.84" "Pillow>=10,<12"
           python tools/generate_hero_contours.py
+      - name: Verify reference artwork and high-detail world textures
+        run: python tools/verify_build_assets.py
       - name: Check Unity secrets
         run: |
           test -n "${{ secrets.UNITY_LICENSE }}" || (echo "Missing UNITY_LICENSE secret. Add Unity Personal license XML in repository Actions secrets." && exit 1)
@@ -49,6 +51,25 @@ jobs:
           buildName: ChroniclesOfAsh
           buildsPath: build
           allowDirtyBuild: true
+      - name: Verify APK was rebuilt and has a plausible size
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t apks < <(find build/Android -maxdepth 1 -type f -name '*.apk' -print)
+          if [ "${#apks[@]}" -ne 1 ]; then
+            echo "Expected exactly one APK, found ${#apks[@]}."
+            printf '%s\n' "${apks[@]}"
+            exit 1
+          fi
+          apk="${apks[0]}"
+          size=$(stat -c '%s' "$apk")
+          echo "Fresh APK: $apk"
+          echo "APK size: $size bytes"
+          if [ "$size" -lt 20000000 ]; then
+            echo "APK is under 20 MB; refusing to publish a likely incomplete build."
+            exit 1
+          fi
+          sha256sum "$apk"
       - uses: actions/upload-artifact@v4
         with:
           name: ChroniclesOfAsh-Unity-APK
