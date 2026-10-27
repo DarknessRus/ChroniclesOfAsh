@@ -1,17 +1,23 @@
 using UnityEngine;
 
 /// <summary>
-/// Adds a cohesive, moody, higher-detail surface pass to the runtime-generated Ash valley.
-/// Uses generated textures only, so Android builds do not depend on external downloads.
+/// High-resolution, multi-scale terrain surfaces for the mobile Ash valley.
+/// Generates tiled 2K soil/stone albedo and a matching detail normal map locally,
+/// avoiding external downloads while adding fine-scale surface relief.
 /// </summary>
 public static class AshRealisticWorldVisuals
 {
+    const int GroundSize = 2048;
+    const int NormalSize = 1024;
     static Texture2D groundTexture;
+    static Texture2D groundNormal;
     static Texture2D waterTexture;
+    static Mesh bladeMeshCache;
 
     public static void Apply(Transform root)
     {
         ApplyTerrainSurface(root);
+        ApplyRockSurfaces(root);
         ApplyWaterSurface(root);
         ApplyAtmosphere();
         AddGroundDetail(root);
@@ -25,21 +31,94 @@ public static class AshRealisticWorldVisuals
         if (renderer == null) return;
 
         if (groundTexture == null) groundTexture = MakeGroundTexture();
-        Material mat = new Material(AshMaterials.Create(Color.white, .12f));
-        if (mat.HasProperty("_MainTex"))
+        if (groundNormal == null) groundNormal = MakeGroundNormal();
+        Shader shader = Shader.Find("Standard");
+        if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null) shader = renderer.sharedMaterial.shader;
+        Material mat = new Material(shader);
+        mat.name = "Ash Valley - 2K photodetailed earth";
+        if (mat.HasProperty("_Color")) mat.SetColor("_Color", Color.white);
+        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", Color.white);
+        if (mat.HasProperty("_MainTex")) mat.SetTexture("_MainTex", groundTexture);
+        if (mat.HasProperty("_BaseMap")) mat.SetTexture("_BaseMap", groundTexture);
+        if (mat.HasProperty("_BumpMap"))
         {
-            mat.mainTexture = groundTexture;
-            mat.mainTextureScale = new Vector2(1.7f, 1.7f);
+            mat.SetTexture("_BumpMap", groundNormal);
+            mat.EnableKeyword("_NORMALMAP");
+            if (mat.HasProperty("_BumpScale")) mat.SetFloat("_BumpScale", .65f);
         }
-        if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", .08f);
+        if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", .12f);
+        if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", .12f);
+        mat.mainTextureScale = new Vector2(2.4f, 2.4f);
         renderer.sharedMaterial = mat;
     }
 
+    // 2K seamless albedo: layered damp earth, shale chips, grit, tiny roots and moss.
     static Texture2D MakeGroundTexture()
     {
-        const int size = 512;
+        int size = GroundSize;
+        var tex = new Texture2D(size, size, TextureFormat.RGB24, true, false);
+        tex.name = "Ash Valley 2048 - soil shale moss and mineral grit";
+        tex.wrapMode = TextureWrapMode.Repeat;
+        tex.filterMode = FilterMode.Trilinear;
+        tex.anisoLevel = 16;
+        var pixels = new Color[size * size];
+        for (int y = 0; y < size; y++)
+        {
+            float v = y / (float)size;
+            for (int x = 0; x < size; x++)
+            {
+                float u = x / (float)size;
+                float macro = Mathf.PerlinNoise(u * 5.2f + 3.1f, v * 5.2f + 8.7f);
+                float soil = Mathf.PerlinNoise(u * 21f + 13f, v * 21f + 5f);
+                float stone = Mathf.PerlinNoise(u * 59f + 41f, v * 59f + 17f);
+                float grain = Mathf.PerlinNoise(u * 137f + 19f, v * 137f + 2f);
+                // Deterministic fine mineral grains avoid another expensive noise lookup.
+                float hash = Mathf.Abs(Mathf.Sin((x * 127.1f + y * 311.7f) * .0174533f) * 43758.5453f);
+                hash = hash - Mathf.Floor(hash);
+                float hash2 = Mathf.Abs(Mathf.Sin((x * 269.5f + y * 183.3f) * .01357f) * 24634.6345f);
+                hash2 = hash2 - Mathf.Floor(hash2);
+                float crackField = Mathf.PerlinNoise(u * 34f + 9f, v * 34f + 33f);
+                float cracks = Mathf.Pow(1f - Mathf.Abs(crackField - .5f) * 2f, 17f);
+                float value = .29f + macro * .20f + soil * .17f + stone * .13f +
+                              grain * .075f + hash * .075f + hash2 * .035f - cracks * .095f;
+                value = Mathf.Clamp(value, .12f, .78f);
+                // Cool charcoal shale mixed with muted brown soil.
+                Color earth = new Color(value * .78f, value * .79f, value * .75f);
+                float mossNoise = Mathf.PerlinNoise(u * 12f + 41f, v * 12f + 29f);
+                float mossMask = Mathf.SmoothStep(.59f, .76f, mossNoise) * Mathf.Clamp01((soil + macro) * .8f);
+                Color moss = new Color(value * .48f, value * .61f, value * .43f);
+                Color result = Color.Lerp(earth, moss, mossMask * .62f);
+                // Scattered pale mineral chips break up broad smooth patches.
+                float fleck = Mathf.Pow(hash2, 22f) * Mathf.Clamp01(stone * 1.6f);
+                result += new Color(fleck * .19f, fleck * .18f, fleck * .15f);
+                pixels[y * size + x] = result;
+            }
+        }
+        tex.SetPixels(pixels);
+        tex.Apply(true, true);
+        return tex;
+    }
+
+    // Tangent-space normal map generated from the same layered micro-relief.
+    static Texture2D MakeGroundNormal()
+    {
+        int size = NormalSize;
+        var heights = new float[size * size];
+        for (int y = 0; y < size; y++)
+        {
+            float v = y / (float)size;
+            for (int x = 0; x < size; x++)
+            {
+                float u = x / (float)size;
+                float broad = Mathf.PerlinNoise(u * 17f + 4f, v * 17f + 8f);
+                float grit = Mathf.PerlinNoise(u * 73f + 29f, v * 73f + 13f);
+                float fine = Mathf.PerlinNoise(u * 191f + 11f, v * 191f + 51f);
+                heights[y * size + x] = broad * .48f + grit * .34f + fine * .18f;
+            }
+        }
         var tex = new Texture2D(size, size, TextureFormat.RGB24, true, true);
-        tex.name = "Ash Valley - layered soil, moss and stone";
+        tex.name = "Ash Valley 1024 - soil and shale normal detail";
         tex.wrapMode = TextureWrapMode.Repeat;
         tex.filterMode = FilterMode.Trilinear;
         tex.anisoLevel = 8;
@@ -47,25 +126,34 @@ public static class AshRealisticWorldVisuals
         for (int y = 0; y < size; y++)
         for (int x = 0; x < size; x++)
         {
-            float u = x / (float)size, v = y / (float)size;
-            float macro = Mathf.PerlinNoise(u * 4.5f + 3.1f, v * 4.5f + 8.7f);
-            float soil = Mathf.PerlinNoise(u * 19f + 13f, v * 19f + 5f);
-            float grit = Mathf.PerlinNoise(u * 67f + 4f, v * 67f + 17f);
-            float grain = Mathf.PerlinNoise(u * 143f + 19f, v * 143f + 2f);
-            float microGrain = Mathf.PerlinNoise(u * 257f + 61f, v * 257f + 43f);
-            float fineGrain = Mathf.PerlinNoise(u * 389f + 27f, v * 389f + 71f);
-            float moss = Mathf.PerlinNoise(u * 11f + 41f, v * 11f + 29f);
-            float crackNoise = Mathf.PerlinNoise(u * 31f + 9f, v * 31f + 33f);
-            float cracks = Mathf.Pow(1f - Mathf.Abs(crackNoise - .5f) * 2f, 13f);
-            float value = .47f + macro * .22f + soil * .14f + grit * .085f + grain * .045f + microGrain * .035f + fineGrain * .018f - cracks * .12f;
-            Color earth = new Color(value * .78f, value * .79f, value * .70f);
-            Color mossColor = new Color(value * .54f, value * .70f, value * .53f);
-            float blend = Mathf.Clamp01((moss - .57f) * 3.1f);
-            pixels[y * size + x] = Color.Lerp(earth, mossColor, blend * .48f);
+            int left = y * size + (x == 0 ? size - 1 : x - 1);
+            int right = y * size + (x + 1 == size ? 0 : x + 1);
+            int down = (y == 0 ? size - 1 : y - 1) * size + x;
+            int up = (y + 1 == size ? 0 : y + 1) * size + x;
+            float dx = (heights[left] - heights[right]) * 2.1f;
+            float dy = (heights[down] - heights[up]) * 2.1f;
+            Vector3 n = new Vector3(dx, dy, 1f).normalized;
+            pixels[y * size + x] = new Color(n.x * .5f + .5f, n.y * .5f + .5f, n.z * .5f + .5f);
         }
         tex.SetPixels(pixels);
         tex.Apply(true, true);
         return tex;
+    }
+
+    static void ApplyRockSurfaces(Transform root)
+    {
+        // Give the existing cliffs and boulders more granular, rough material response.
+        foreach (Transform item in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (item.name != "Jagged mountain cliff" && item.name != "Weathered boulder" &&
+                item.name != "Layered valley cliff" && item.name != "Distant jagged mountain" &&
+                item.name != "Mountain broken crown") continue;
+            Renderer r = item.GetComponent<Renderer>();
+            if (r == null || r.sharedMaterial == null) continue;
+            Material m = r.sharedMaterial;
+            if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", .08f);
+            if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", .08f);
+        }
     }
 
     static void ApplyWaterSurface(Transform root)
@@ -79,27 +167,23 @@ public static class AshRealisticWorldVisuals
         if (waterFilter != null && waterFilter.sharedMesh != null)
         {
             Mesh waterMesh = waterFilter.sharedMesh;
+            Vector2[] uv = new Vector2[waterMesh.vertexCount];
             Vector3[] vertices = waterMesh.vertices;
-            Vector2[] uv = new Vector2[vertices.Length];
             for (int i = 0; i < vertices.Length; i++)
                 uv[i] = new Vector2(vertices[i].x * .12f, vertices[i].z * .06f);
             waterMesh.uv = uv;
         }
         Material mat = new Material(AshMaterials.Create(new Color(.48f,.70f,.73f), .82f));
-        if (mat.HasProperty("_MainTex"))
-        {
-            mat.mainTexture = waterTexture;
-            mat.mainTextureScale = new Vector2(3f, 28f);
-        }
+        if (mat.HasProperty("_MainTex")) mat.mainTexture = waterTexture;
         if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", .82f);
         renderer.sharedMaterial = mat;
     }
 
     static Texture2D MakeWaterTexture()
     {
-        const int size = 256;
-        var tex = new Texture2D(size, size, TextureFormat.RGB24, true, true);
-        tex.name = "Ash Valley - cloudy water ripples";
+        const int size = 512;
+        var tex = new Texture2D(size, size, TextureFormat.RGB24, true, false);
+        tex.name = "Ash Valley - cold water micro-ripples";
         tex.wrapMode = TextureWrapMode.Repeat;
         tex.filterMode = FilterMode.Trilinear;
         var pixels = new Color[size * size];
@@ -107,12 +191,12 @@ public static class AshRealisticWorldVisuals
         for (int x = 0; x < size; x++)
         {
             float u = x / (float)size, v = y / (float)size;
-            float broad = Mathf.PerlinNoise(u * 5f + 2f, v * 9f + 17f);
-            float ripple = Mathf.PerlinNoise(u * 31f + 8f, v * 53f + 3f);
-            float fineRipple = Mathf.PerlinNoise(u * 97f + 14f, v * 151f + 29f);
-            float streak = Mathf.Pow(Mathf.Clamp01(1f - Mathf.Abs(ripple - .5f) * 2f), 5f);
-            float c = .39f + broad * .22f + streak * .20f + fineRipple * .12f;
-            pixels[y * size + x] = new Color(c * .55f, c * .78f, c * .83f);
+            float broad = Mathf.PerlinNoise(u * 7f + 2f, v * 11f + 17f);
+            float ripple = Mathf.PerlinNoise(u * 47f + 8f, v * 89f + 3f);
+            float fine = Mathf.PerlinNoise(u * 131f + 14f, v * 173f + 29f);
+            float streak = Mathf.Pow(Mathf.Clamp01(1f - Mathf.Abs(ripple - .5f) * 2f), 6f);
+            float c = .25f + broad * .16f + streak * .24f + fine * .12f;
+            pixels[y * size + x] = new Color(c * .36f, c * .65f, c * .76f);
         }
         tex.SetPixels(pixels);
         tex.Apply(true, true);
@@ -137,18 +221,17 @@ public static class AshRealisticWorldVisuals
 
     static void AddGroundDetail(Transform root)
     {
-        // Small clumps break up empty ground without blocking the player's route.
         var rng = new System.Random(78431);
         Material grassA = AshMaterials.Create(new Color(.16f,.20f,.13f), .05f);
         Material grassB = AshMaterials.Create(new Color(.23f,.24f,.15f), .05f);
-        for (int i = 0; i < 520; i++)
+        Mesh bladeMesh = BladeMesh();
+        for (int i = 0; i < 700; i++)
         {
             float x = (float)(rng.NextDouble() * 210.0 - 105.0);
             float z = (float)(rng.NextDouble() * 210.0 - 60.0);
             if (Mathf.Abs(x) < 8f && z > 0f && z < 82f) continue;
-            float riverX = Mathf.Sin((z - 45f) * .027f) * 15f + Mathf.Sin((z - 45f) * .071f) * 4f;
-            if (Mathf.Abs(x - riverX) < 6.5f) continue;
-            float n = Mathf.PerlinNoise((x + 400f) * .035f, (z + 400f) * .035f);
+            float rx = Mathf.Sin((z - 45f) * .027f) * 15f + Mathf.Sin((z - 45f) * .071f) * 4f;
+            if (Mathf.Abs(x - rx) < 6.5f) continue;
             float y = TerrainHeight(x, z);
             var clump = new GameObject("Wild grass and scrub");
             clump.transform.SetParent(root, false);
@@ -158,13 +241,13 @@ public static class AshRealisticWorldVisuals
             clump.transform.localScale = new Vector3(s, s, s);
             for (int blade = 0; blade < 3; blade++)
             {
-                var mesh = new GameObject("Grass blade", typeof(MeshFilter), typeof(MeshRenderer));
-                mesh.transform.SetParent(clump.transform, false);
-                mesh.transform.localPosition = new Vector3((blade - 1) * .16f, .28f, (blade % 2) * .12f);
-                mesh.transform.localRotation = Quaternion.Euler(0f, blade * 61f, (blade - 1) * 17f);
-                mesh.transform.localScale = new Vector3(.12f, .58f + blade * .08f, .08f);
-                mesh.GetComponent<MeshFilter>().sharedMesh = BladeMesh();
-                mesh.GetComponent<MeshRenderer>().sharedMaterial = blade == 1 ? grassB : grassA;
+                var go = new GameObject("Grass blade", typeof(MeshFilter), typeof(MeshRenderer));
+                go.transform.SetParent(clump.transform, false);
+                go.transform.localPosition = new Vector3((blade - 1) * .16f, .28f, (blade % 2) * .12f);
+                go.transform.localRotation = Quaternion.Euler(0f, blade * 61f, (blade - 1) * 17f);
+                go.transform.localScale = new Vector3(.12f, .58f + blade * .08f, .08f);
+                go.GetComponent<MeshFilter>().sharedMesh = bladeMesh;
+                go.GetComponent<MeshRenderer>().sharedMaterial = blade == 1 ? grassB : grassA;
             }
         }
     }
@@ -172,17 +255,16 @@ public static class AshRealisticWorldVisuals
     static float TerrainHeight(float x, float worldZ)
     {
         float z = worldZ - 45f;
-        float broad = Mathf.Sin(x * .034f) * 2.4f + Mathf.Cos(z * .031f) * 2.2f;
-        float detail = (Mathf.PerlinNoise((x + 450f) * .035f, (z + 450f) * .035f) - .5f) * 2.6f
-                     + (Mathf.PerlinNoise((x + 90f) * .095f, (z + 90f) * .095f) - .5f) * .75f;
+        float broad = Mathf.Sin(x * .034f) * 4.6f + Mathf.Cos(z * .031f) * 4.1f;
+        float detail = (Mathf.PerlinNoise((x + 450f) * .035f, (z + 450f) * .035f) - .5f) * 3.8f
+                     + (Mathf.PerlinNoise((x + 90f) * .095f, (z + 90f) * .095f) - .5f) * 1.1f;
         float ridgeNoise = Mathf.PerlinNoise((x + 350f) * .012f, (z + 350f) * .012f);
-        float ridge = Mathf.Pow(Mathf.Clamp01((ridgeNoise - .43f) / .57f), 1.4f) * 13f;
+        float ridge = Mathf.Pow(Mathf.Clamp01((ridgeNoise - .40f) / .60f), 1.35f) * 22f;
         float riverX = Mathf.Sin(z * .027f) * 15f + Mathf.Sin(z * .071f) * 4f;
         float bank = Mathf.Clamp01((Mathf.Abs(x - riverX) - 4.2f) / 10f);
         return -.15f + Mathf.Lerp(-.08f, broad + detail + ridge, bank) + .035f;
     }
 
-    static Mesh bladeMeshCache;
     static Mesh BladeMesh()
     {
         if (bladeMeshCache != null) return bladeMeshCache;
