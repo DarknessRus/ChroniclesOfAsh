@@ -170,8 +170,8 @@ public static class AshOpenWorld
             int bottomB = 2 + next;
             int topA = 2 + (rings - 1) * sides + s;
             int topB = 2 + (rings - 1) * sides + next;
-            tris.Add(0); tris.Add(bottomB); tris.Add(bottomA);
-            tris.Add(1); tris.Add(topA); tris.Add(topB);
+            tris.Add(0); tris.Add(bottomA); tris.Add(bottomB);
+            tris.Add(1); tris.Add(topB); tris.Add(topA);
         }
         for (int ring = 0; ring < rings - 1; ring++)
         for (int s = 0; s < sides; s++)
