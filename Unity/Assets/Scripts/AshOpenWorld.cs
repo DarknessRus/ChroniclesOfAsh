@@ -79,9 +79,20 @@ public static class AshOpenWorld
         }
         mesh.vertices = vertices; mesh.uv = uv; mesh.colors = colors; mesh.triangles = triangles;
         mesh.RecalculateNormals();
-        terrain.AddComponent<MeshFilter>().sharedMesh = mesh;
-        terrain.AddComponent<MeshRenderer>().sharedMaterial = AshMaterials.Create(Color.white, .08f);
-        terrain.AddComponent<MeshCollider>().sharedMesh = mesh;
+        // Explicitly calculate bounds after assigning the generated 103k-vertex mesh.
+        // This prevents renderer/frustum culling from treating the terrain as a zero-sized mesh
+        // on devices/build configurations where bounds are not refreshed by the vertex setter.
+        mesh.RecalculateBounds();
+        var filter = terrain.AddComponent<MeshFilter>();
+        filter.sharedMesh = mesh;
+        var terrainRenderer = terrain.AddComponent<MeshRenderer>();
+        terrainRenderer.sharedMaterial = AshMaterials.Create(new Color(.72f, .73f, .69f), .08f);
+        terrainRenderer.enabled = true;
+        var terrainCollider = terrain.AddComponent<MeshCollider>();
+        terrainCollider.sharedMesh = mesh;
+        Debug.Log("[Ash Chronicles] Terrain mesh ready: vertices=" + vertices.Length +
+            ", triangles=" + (triangles.Length / 3) + ", bounds=" + mesh.bounds +
+            ", renderer=" + terrainRenderer.enabled + ", collider=" + (terrainCollider.sharedMesh != null));
     }
 
     static float RiverX(float z) { return Mathf.Sin(z * .027f) * 15f + Mathf.Sin(z * .071f) * 4f; }
