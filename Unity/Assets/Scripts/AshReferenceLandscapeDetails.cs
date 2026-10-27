@@ -42,12 +42,19 @@ public static class AshReferenceLandscapeDetails
         BuildPeak(root, "Distant snow mountain - central", new Vector3(-5f, 0f, 190f), 33f, 67f, 28f, rock, snow, 17);
         BuildPeak(root, "Distant snow mountain - east", new Vector3(30f, 0f, 178f), 28f, 57f, 25f, rock, snow, 23);
         BuildPeak(root, "Distant snow mountain - far east", new Vector3(53f, 0f, 194f), 22f, 46f, 23f, rock, snow, 31);
+        // Layered secondary ridges give the valley the deep, overlapping mountain horizon
+        // visible in the saved reference image, rather than four isolated cone silhouettes.
+        var farRock = MakeMaterial("Reference far ridges - atmospheric blue slate", new Color(.105f, .135f, .17f), .04f, .16f);
+        var farSnow = MakeMaterial("Reference far ridges - misted snow", new Color(.43f, .49f, .53f), .01f, .12f);
+        BuildPeak(root, "Far ridge - western shoulder", new Vector3(-69f, -3f, 213f), 31f, 38f, 20f, farRock, farSnow, 43);
+        BuildPeak(root, "Far ridge - central saddle", new Vector3(-28f, -5f, 224f), 39f, 44f, 22f, farRock, farSnow, 47);
+        BuildPeak(root, "Far ridge - eastern shoulder", new Vector3(70f, -4f, 218f), 34f, 40f, 21f, farRock, farSnow, 53);
     }
 
     static void BuildPeak(Transform root, string name, Vector3 basePosition, float radius, float height,
         float depth, Material rock, Material snow, int seed)
     {
-        int sides = 7;
+        int sides = 11;
         var vertices = new Vector3[sides * 2 + 1];
         var triangles = new int[sides * 6];
         var random = new System.Random(seed);
@@ -91,7 +98,7 @@ public static class AshReferenceLandscapeDetails
             patch.transform.SetParent(root, false);
             patch.transform.position = basePosition + new Vector3(x, y, z);
             patch.transform.rotation = Quaternion.Euler(18f + i * 7f, i * 31f, 12f - i * 5f);
-            patch.transform.localScale = new Vector3(radius * .48f, height * .055f, depth * .24f);
+            patch.transform.localScale = new Vector3(radius * (.22f + (i % 3) * .055f), height * (.032f + (i % 2) * .012f), depth * (.11f + (i % 2) * .035f));
             patch.GetComponent<Renderer>().sharedMaterial = snow;
             var collider = patch.GetComponent<Collider>();
             if (collider != null) Object.Destroy(collider);
