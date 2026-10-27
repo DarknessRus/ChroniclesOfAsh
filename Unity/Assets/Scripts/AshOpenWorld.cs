@@ -67,7 +67,8 @@ public static class AshOpenWorld
             y -= Mathf.Exp(-Mathf.Pow(valleyDistance / 31f, 2f)) * 2.2f;
             int index = z * (Grid + 1) + x;
             vertices[index] = new Vector3(wx, y, wz);
-            uv[index] = new Vector2((float)x / Grid * 18f, (float)z / Grid * 18f);
+            // Repeat the scanned ground texture at a realistic scale. 18 repeats across the whole valley made 2K PBR detail look like broad, nearly flat color patches on mobile; 96 repeats bring soil grain and small stones into view at player distance.
+            uv[index] = new Vector2((float)x / Grid * 96f, (float)z / Grid * 96f);
             float tint = Mathf.PerlinNoise(wx * .075f + 12f, wz * .075f + 8f);
             float damp = Mathf.PerlinNoise(wx * .12f + 70f, wz * .12f + 20f);
             Color ground = Color.Lerp(new Color(.075f,.095f,.085f), new Color(.25f,.24f,.19f), tint);
