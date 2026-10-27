@@ -53,9 +53,19 @@ public sealed class AshUrpBuildSetup : IPreprocessBuildWithReport
 
             UniversalRenderPipelineAsset pipeline = null;
             // URP's own factory initializes its internal renderer list and default resources.
-            MethodInfo factory = typeof(UniversalRenderPipelineAsset).GetMethod(
-                "Create", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static,
-                null, new Type[] { typeof(ScriptableRendererData) }, null);
+            MethodInfo factory = null;
+            MethodInfo[] factories = typeof(UniversalRenderPipelineAsset).GetMethods(
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            foreach (MethodInfo candidate in factories)
+            {
+                ParameterInfo[] parameters = candidate.GetParameters();
+                if (candidate.Name == "Create" && parameters.Length == 1 &&
+                    parameters[0].ParameterType.IsAssignableFrom(renderer.GetType()))
+                {
+                    factory = candidate;
+                    break;
+                }
+            }
             if (factory != null)
             {
                 try { pipeline = factory.Invoke(null, new object[] { renderer }) as UniversalRenderPipelineAsset; }
