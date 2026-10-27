@@ -218,7 +218,7 @@ public static class AshOpenWorld
         static void BuildForests(Transform root)
     {
         if (pineCrownMesh == null) pineCrownMesh = MakePineMesh();
-        for (int i = 0; i < 300; i++)
+        for (int i = 0; i < 340; i++)
         {
             float angle = i * 2.39996f;
             float radius = 17f + (i % 21) * 5.0f;
@@ -237,39 +237,76 @@ public static class AshOpenWorld
             trunk.transform.localPosition = Vector3.up * scale * .39f;
             trunk.transform.localScale = new Vector3(.19f + scale*.025f, scale*.46f, .19f + scale*.025f);
             trunk.GetComponent<Renderer>().sharedMaterial = MaterialFor(new Color(.16f,.105f,.075f));
-            for (int k = 0; k < 3; k++)
-            {
-                var crown = new GameObject("Layered pine boughs", typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
-                crown.transform.SetParent(tree.transform, false);
-                crown.transform.localPosition = Vector3.up * (scale * (.40f + k*.23f));
-                float crownScale = scale * (1.05f-k*.20f);
-                crown.transform.localScale = new Vector3(crownScale, scale*.63f, crownScale);
-                crown.GetComponent<MeshFilter>().sharedMesh = pineCrownMesh;
-                crown.GetComponent<MeshRenderer>().sharedMaterial = MaterialFor(k==0 ? new Color(.035f,.095f,.075f) : new Color(.045f,.13f,.09f));
-                crown.GetComponent<MeshCollider>().sharedMesh = pineCrownMesh;
-            }
+            var crown = new GameObject("Layered pine boughs", typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
+            crown.transform.SetParent(tree.transform, false);
+            crown.transform.localPosition = Vector3.up * (scale * .56f);
+            crown.transform.localScale = new Vector3(scale * 1.22f, scale * 1.02f, scale * 1.22f);
+            crown.GetComponent<MeshFilter>().sharedMesh = pineCrownMesh;
+            crown.GetComponent<MeshRenderer>().sharedMaterial = MaterialFor(new Color(.035f, .105f, .078f));
+            crown.GetComponent<MeshCollider>().sharedMesh = pineCrownMesh;
         }
     }
 
     static Mesh MakePineMesh()
     {
-        const int sides=9;
-        var vertices=new Vector3[sides+1];
-        var triangles=new int[sides*6];
-        vertices[0]=new Vector3(0,.5f,0);
-        for(int i=0;i<sides;i++)
+        // One continuous, layered conifer silhouette with irregular branch skirts.
+        // It replaces the three identical cone primitives with a fuller, less toy-like pine.
+        const int sides = 14;
+        float[] heights = { -.50f, -.34f, -.20f, -.08f, .06f, .19f, .31f, .42f, .50f };
+        float[] radii   = { .10f,  .43f,  .31f,  .49f, .34f, .39f, .25f, .27f, .015f };
+        int rings = heights.Length;
+        var vertices = new Vector3[rings * sides];
+        var uv = new Vector2[vertices.Length];
+        var triangles = new int[(rings - 1) * sides * 6 + sides * 3];
+        for (int r = 0; r < rings; r++)
         {
-            float a=i*Mathf.PI*2f/sides;
-            vertices[i+1]=new Vector3(Mathf.Cos(a)*.5f,-.5f,Mathf.Sin(a)*.5f);
-            int next=(i+1)%sides;
-            int t=i*6; triangles[t]=0;triangles[t+1]=i+1;triangles[t+2]=next+1;
-            triangles[t+3]=i+1;triangles[t+4]=sides;triangles[t+5]=next+1;
+            for (int s = 0; s < sides; s++)
+            {
+                float angle = (s / (float)sides) * Mathf.PI * 2f + (r % 2) * .11f;
+                float wobble = 1f + Mathf.Sin(s * 7.31f + r * 2.17f) * .10f
+                                  + Mathf.Sin(s * 2.3f + r * 5.7f) * .055f;
+                float radius = radii[r] * wobble;
+                vertices[r * sides + s] = new Vector3(Mathf.Cos(angle) * radius,
+                    heights[r] + Mathf.Sin(s * 4.7f + r) * .012f,
+                    Mathf.Sin(angle) * radius);
+                uv[r * sides + s] = new Vector2(s / (float)sides, (heights[r] + .5f));
+            }
         }
-        // Correctly sized closed cone with a base center.
-        var v2=new Vector3[sides+2]; System.Array.Copy(vertices,v2,vertices.Length); v2[sides+1]=new Vector3(0,-.5f,0);
-        var t2=new int[sides*6];
-        for(int i=0;i<sides;i++){int n=(i+1)%sides;int t=i*6;t2[t]=0;t2[t+1]=i+1;t2[t+2]=n+1;t2[t+3]=sides+1;t2[t+4]=n+1;t2[t+5]=i+1;}
-        var mesh=new Mesh{name="Low-poly pine crown"};mesh.vertices=v2;mesh.triangles=t2;mesh.RecalculateNormals();return mesh;
+        var tris = new List<int>(triangles.Length);
+        for (int r = 0; r < rings - 1; r++)
+        for (int s = 0; s < sides; s++)
+        {
+            int n = (s + 1) % sides;
+            int a = r * sides + s;
+            int b = r * sides + n;
+            int d = (r + 1) * sides + n;
+            int e = (r + 1) * sides + s;
+            tris.Add(a); tris.Add(e); tris.Add(b);
+            tris.Add(b); tris.Add(e); tris.Add(d);
+        }
+        int tip = tris.Count;
+        for (int s = 0; s < sides; s++)
+        {
+            int n = (s + 1) % sides;
+            tris.Add((rings - 1) * sides + s);
+            tris.Add((rings - 1) * sides + n);
+            tris.Add(tip); // top cap index is appended below by a dedicated tip vertex
+        }
+        // Use a dedicated, slightly off-centre crown tip for a natural silhouette.
+        var finalVertices = new Vector3[vertices.Length + 1];
+        var finalUv = new Vector2[uv.Length + 1];
+        System.Array.Copy(vertices, finalVertices, vertices.Length);
+        System.Array.Copy(uv, finalUv, uv.Length);
+        finalVertices[vertices.Length] = new Vector3(.008f, .505f, -.006f);
+        finalUv[uv.Length] = new Vector2(.5f, 1f);
+        for (int i = tip + 2; i < tris.Count; i += 3) tris[i] = vertices.Length;
+        var mesh = new Mesh { name = "Ash realistic layered pine bough mesh" };
+        mesh.vertices = finalVertices;
+        mesh.uv = finalUv;
+        mesh.triangles = tris.ToArray();
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        return mesh;
     }
 
     static void BuildTrail(Transform root)
