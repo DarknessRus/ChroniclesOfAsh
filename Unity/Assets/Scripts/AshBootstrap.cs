@@ -123,17 +123,9 @@ public class AshBootstrap : MonoBehaviour
             if (i == selectedHero)
             {
                 var tint = hit.GetComponent<Image>();
-                tint.color = new Color(1f, .43f, .08f, .16f);
+                tint.color = new Color(1f, .20f, .015f, .035f);
                 tint.raycastTarget = false;
-                var outline = hit.AddComponent<Outline>();
-                outline.effectColor = new Color(1f, .57f, .12f, .98f);
-                outline.effectDistance = new Vector2(5f, 5f);
-
-                // Small glowing marker at the bottom of the selected hero's area.
-                var marker = AddPanel(hit.transform, new Vector2(.12f, .025f), new Vector2(.88f, .045f),
-                    new Color(1f, .55f, .12f, .98f));
-                marker.name = "Selected hero marker";
-                marker.GetComponent<Image>().raycastTarget = false;
+                AddFireHeroContour(hit.transform);
             }
 
             var button = hit.AddComponent<Button>();
@@ -157,6 +149,53 @@ public class AshBootstrap : MonoBehaviour
         startColors.pressedColor = new Color(1f,.40f,.10f,.12f);
         startButton.colors = startColors;
         startButton.onClick.AddListener(StartGame);
+    }
+
+    void AddFireHeroContour(Transform parent)
+    {
+        // Approximate the visible silhouette: head, shoulders, arms, torso and legs.
+        Vector2[] points = {
+            new Vector2(.43f,.88f), new Vector2(.37f,.85f), new Vector2(.34f,.80f),
+            new Vector2(.35f,.74f), new Vector2(.40f,.70f), new Vector2(.50f,.68f),
+            new Vector2(.60f,.70f), new Vector2(.65f,.75f), new Vector2(.66f,.80f),
+            new Vector2(.62f,.85f), new Vector2(.57f,.88f), new Vector2(.68f,.77f),
+            new Vector2(.78f,.70f), new Vector2(.84f,.59f), new Vector2(.81f,.55f),
+            new Vector2(.76f,.57f), new Vector2(.70f,.66f), new Vector2(.65f,.65f),
+            new Vector2(.64f,.53f), new Vector2(.66f,.43f), new Vector2(.71f,.31f),
+            new Vector2(.67f,.27f), new Vector2(.56f,.28f), new Vector2(.52f,.40f),
+            new Vector2(.48f,.40f), new Vector2(.44f,.28f), new Vector2(.33f,.27f),
+            new Vector2(.29f,.31f), new Vector2(.35f,.43f), new Vector2(.35f,.54f),
+            new Vector2(.32f,.65f), new Vector2(.27f,.65f), new Vector2(.21f,.57f),
+            new Vector2(.16f,.55f), new Vector2(.14f,.59f), new Vector2(.20f,.70f),
+            new Vector2(.31f,.77f), new Vector2(.38f,.76f), new Vector2(.43f,.88f)
+        };
+        for (int i = 0; i < points.Length - 1; i++)
+        {
+            CreateFireContourSegment(parent, points[i], points[i + 1], 12f, new Color(1f, .08f, .01f, .22f), "Fire glow");
+            CreateFireContourSegment(parent, points[i], points[i + 1], 5f, new Color(1f, .24f, .015f, .98f), "Flame edge");
+            CreateFireContourSegment(parent, points[i], points[i + 1], 2f, new Color(1f, .82f, .38f, 1f), "Hot core");
+        }
+    }
+
+    void CreateFireContourSegment(Transform parent, Vector2 from, Vector2 to, float thickness, Color color, string label)
+    {
+        var go = new GameObject(label, typeof(RectTransform), typeof(Image));
+        go.transform.SetParent(parent, false);
+        var rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
+        rect.pivot = new Vector2(.5f, .5f);
+        RectTransform parentRect = parent as RectTransform;
+        float width = parentRect.rect.width;
+        float height = parentRect.rect.height;
+        Vector2 a = new Vector2((from.x - .5f) * width, (from.y - .5f) * height);
+        Vector2 b = new Vector2((to.x - .5f) * width, (to.y - .5f) * height);
+        Vector2 delta = b - a;
+        rect.anchoredPosition = (a + b) * .5f;
+        rect.sizeDelta = new Vector2(delta.magnitude, thickness);
+        rect.localEulerAngles = new Vector3(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
+        var image = go.GetComponent<Image>();
+        image.color = color;
+        image.raycastTarget = false;
     }
 
     Color HeroColor(int i) { return i==0?new Color(.28f,.22f,.17f):i==1?new Color(.10f,.25f,.34f):i==2?new Color(.15f,.29f,.24f):new Color(.25f,.18f,.31f); }
