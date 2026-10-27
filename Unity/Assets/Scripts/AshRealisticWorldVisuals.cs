@@ -383,15 +383,25 @@ public static class AshRealisticWorldVisuals
 
     static float TerrainHeight(float x, float worldZ)
     {
+        // Keep decorative grass anchored to the exact same height field as the
+        // collidable terrain mesh in AshOpenWorld.BuildTerrain.
         float z = worldZ - 45f;
-        float broad = Mathf.Sin(x * .034f) * 4.6f + Mathf.Cos(z * .031f) * 4.1f;
-        float detail = (Mathf.PerlinNoise((x + 450f) * .035f, (z + 450f) * .035f) - .5f) * 3.8f
-                     + (Mathf.PerlinNoise((x + 90f) * .095f, (z + 90f) * .095f) - .5f) * 1.1f;
-        float ridgeNoise = Mathf.PerlinNoise((x + 350f) * .012f, (z + 350f) * .012f);
-        float ridge = Mathf.Pow(Mathf.Clamp01((ridgeNoise - .40f) / .60f), 1.35f) * 22f;
+        float macro = Mathf.Sin(x * .021f + Mathf.Sin(z * .013f) * .8f) * 5.2f
+                    + Mathf.Cos(z * .024f + x * .009f) * 4.4f;
+        float rolling = (Mathf.PerlinNoise((x + 450f) * .018f, (z + 450f) * .018f) - .5f) * 9.5f;
+        float erosion = (Mathf.PerlinNoise((x + 90f) * .062f, (z + 90f) * .062f) - .5f) * 2.4f
+                      + (Mathf.PerlinNoise((x - 170f) * .15f, (z + 270f) * .15f) - .5f) * .75f;
+        float n = Mathf.PerlinNoise((x + 350f) * .010f, (z + 350f) * .010f);
+        float ridgeNoise = 1f - Mathf.Abs(n * 2f - 1f);
+        float ridge = Mathf.Pow(Mathf.Clamp01((ridgeNoise - .48f) / .52f), 2.0f) * 24f;
         float riverX = Mathf.Sin(z * .027f) * 15f + Mathf.Sin(z * .071f) * 4f;
-        float bank = Mathf.Clamp01((Mathf.Abs(x - riverX) - 4.2f) / 10f);
-        return -.15f + Mathf.Lerp(-.08f, broad + detail + ridge, bank) + .035f;
+        float distance = Mathf.Abs(x - riverX);
+        float valleyShoulder = Mathf.Clamp01((distance - 10f) / 43f);
+        float riverBank = Mathf.Clamp01((distance - 3.6f) / 8.5f);
+        float upland = macro + rolling + erosion + ridge * valleyShoulder;
+        float localY = Mathf.Lerp(-.08f, upland, riverBank);
+        localY -= Mathf.Exp(-Mathf.Pow(distance / 31f, 2f)) * 2.2f;
+        return -.15f + localY;
     }
 
     static Mesh BladeMesh()
