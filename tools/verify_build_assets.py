@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail fast if the reference artwork and all downloaded 4K world maps are present."""
+"""Verify required world assets and ensure PBR JPEGs are 1K or 2K, never above 2K."""
 from pathlib import Path
 import sys
 from PIL import Image
@@ -27,7 +27,6 @@ REQUIRED = [
     Path("Unity/Assets/Resources/PBR/Snow/snow_02_nor_dx_2k.jpg"),
     Path("Unity/Assets/Resources/PBR/Snow/snow_02_rough_2k.jpg"),
 ]
-
 missing = []
 total_bytes = 0
 pbr_count = 0
@@ -45,22 +44,20 @@ for relative in REQUIRED:
             with Image.open(path) as image:
                 width, height = image.size
                 image.verify()
-            if width < 3840 or height < 3840:
-                missing.append(f"{relative} (expected 4K, found {width}x{height})")
+            if width > 2048 or height > 2048 or min(width, height) < 1024:
+                missing.append(f"{relative} (expected 1K/2K, found {width}x{height})")
                 continue
             pbr_count += 1
-            print(f"OK 4K {relative}: {width}x{height}, {size:,} bytes")
+            print(f"OK <=2K {relative}: {width}x{height}, {size:,} bytes")
         except Exception as error:
             missing.append(f"{relative} (invalid image: {error})")
             continue
     else:
         print(f"OK {relative}: {size:,} bytes")
     total_bytes += size
-
 if missing:
     print("\nRESOURCE PREFLIGHT FAILED:", file=sys.stderr)
     for item in missing:
         print(f" - {item}", file=sys.stderr)
     sys.exit(1)
-
-print(f"\nResource preflight passed: {len(REQUIRED)} required files, {pbr_count} verified 4K PBR maps, {total_bytes:,} bytes total.")
+print(f"\nResource preflight passed: {len(REQUIRED)} required files, {pbr_count} verified <=2K PBR maps, {total_bytes:,} bytes total.")
