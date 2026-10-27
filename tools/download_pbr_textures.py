@@ -13,10 +13,10 @@ MAPS = (
     ("grass_ground", "grass_ground", "diff", "Unity/Assets/Resources/PBR/GrassGround/grass_ground_diff_1k.jpg"),
     ("grass_ground", "grass_ground", "nor_dx", "Unity/Assets/Resources/PBR/GrassGround/grass_ground_nor_dx_1k.jpg"),
     ("grass_ground", "grass_ground", "rough", "Unity/Assets/Resources/PBR/GrassGround/grass_ground_rough_1k.jpg"),
-    ("rocks_ground_02", "rocks_ground_02", "diff", "Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_diff_1k.jpg"),
-    ("rocks_ground_02", "rocks_ground_02", "nor_dx", "Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_nor_dx_1k.jpg"),
-    ("rocks_ground_02", "rocks_ground_02", "rough", "Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_rough_1k.jpg"),
-    ("rocks_ground_02", "rocks_ground_02", "disp", "Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_disp_1k.jpg"),
+    ("rock_ground_02", "rocks_ground_02", "diff", "Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_diff_1k.jpg"),
+    ("rock_ground_02", "rocks_ground_02", "nor_dx", "Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_nor_dx_1k.jpg"),
+    ("rock_ground_02", "rocks_ground_02", "rough", "Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_rough_1k.jpg"),
+    ("rock_ground_02", "rocks_ground_02", "disp", "Unity/Assets/Resources/PBR/RockGround/rocks_ground_02_disp_1k.jpg"),
     ("aerial_rocks_02", "aerial_rocks_02", "diff", "Unity/Assets/Resources/PBR/MountainRock/aerial_rocks_02_diff_2k.jpg"),
     ("aerial_rocks_02", "aerial_rocks_02", "nor_dx", "Unity/Assets/Resources/PBR/MountainRock/aerial_rocks_02_nor_dx_2k.jpg"),
     ("aerial_rocks_02", "aerial_rocks_02", "rough", "Unity/Assets/Resources/PBR/MountainRock/aerial_rocks_02_rough_2k.jpg"),
@@ -26,7 +26,7 @@ MAPS = (
 )
 
 for source_asset, local_prefix, map_name, relative_path in MAPS:
-    url = f"{BASE}/{source_asset}/{source_asset}_{map_name}_2k.jpg"
+    url = f"{BASE}/{source_asset}/{local_prefix}_{map_name}_2k.jpg"
     destination = ROOT / relative_path
     destination.parent.mkdir(parents=True, exist_ok=True)
     request = Request(url, headers={"User-Agent": "ChroniclesOfAsh-Android-Build/1.0"})
