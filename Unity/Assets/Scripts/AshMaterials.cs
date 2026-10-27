@@ -40,7 +40,7 @@ public static class AshMaterials
         }
         else
         {
-            Shader shader = Shader.Find("Standard");
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
             if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
             if (shader == null) shader = Shader.Find("UI/Default");
             if (shader == null)
