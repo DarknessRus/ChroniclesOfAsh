@@ -13,18 +13,7 @@ public static class AshArtExpansion
         string key = color.ToString() + "|" + smoothness + "|" + emission;
         Material cached;
         if (materialCache.TryGetValue(key, out cached) && cached != null) return cached;
-        Shader shader = Shader.Find("Standard");
-        if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
-        if (shader == null) shader = Shader.Find("UI/Default");
-        if (shader == null) throw new System.InvalidOperationException("No supported shader found for AshArtExpansion materials.");
-        var material = new Material(shader);
-        material.color = color;
-        if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", smoothness);
-        if (emission && material.HasProperty("_EmissionColor"))
-        {
-            material.EnableKeyword("_EMISSION");
-            material.SetColor("_EmissionColor", color * 1.8f);
-        }
+        var material = AshMaterials.Create(color, smoothness, emission);
         materialCache[key] = material;
         return material;
     }
@@ -198,8 +187,8 @@ public static class AshArtExpansion
         velocity.y = new ParticleSystem.MinMaxCurve(.06f, .24f);
         velocity.z = new ParticleSystem.MinMaxCurve(-.08f, .08f);
         var psRenderer = emberField.GetComponent<ParticleSystemRenderer>();
-        Shader spriteShader = Shader.Find("Sprites/Default");
-        if (spriteShader != null) psRenderer.material = new Material(spriteShader);
+        Material spriteMaterial = AshMaterials.CreateSpriteMaterial();
+        if (spriteMaterial != null) psRenderer.sharedMaterial = spriteMaterial;
     }
 
     public static void DetailHero(Transform hero, int kind)
