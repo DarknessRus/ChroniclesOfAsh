@@ -29,7 +29,7 @@ public static class AshRealisticWorldVisuals
         if (mat.HasProperty("_MainTex"))
         {
             mat.mainTexture = groundTexture;
-            mat.mainTextureScale = new Vector2(34f, 34f);
+            mat.mainTextureScale = new Vector2(1.7f, 1.7f);
         }
         if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", .08f);
         renderer.sharedMaterial = mat;
@@ -73,6 +73,16 @@ public static class AshRealisticWorldVisuals
         Renderer renderer = river.GetComponent<Renderer>();
         if (renderer == null) return;
         if (waterTexture == null) waterTexture = MakeWaterTexture();
+        MeshFilter waterFilter = river.GetComponent<MeshFilter>();
+        if (waterFilter != null && waterFilter.sharedMesh != null)
+        {
+            Mesh waterMesh = waterFilter.sharedMesh;
+            Vector3[] vertices = waterMesh.vertices;
+            Vector2[] uv = new Vector2[vertices.Length];
+            for (int i = 0; i < vertices.Length; i++)
+                uv[i] = new Vector2(vertices[i].x * .12f, vertices[i].z * .06f);
+            waterMesh.uv = uv;
+        }
         Material mat = new Material(AshMaterials.Create(new Color(.48f,.70f,.73f), .82f));
         if (mat.HasProperty("_MainTex"))
         {
