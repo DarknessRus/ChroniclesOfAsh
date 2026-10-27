@@ -83,94 +83,96 @@ public class AshBootstrap : MonoBehaviour
         full.anchorMin = Vector2.zero; full.anchorMax = Vector2.one;
         full.offsetMin = Vector2.zero; full.offsetMax = Vector2.zero;
 
-        // Grimdark graphite presentation with ash haze, restrained ember highlights,
-        // and four large selectable class portraits. The game flow remains unchanged.
-        AddPanel(menuRoot.transform, Vector2.zero, Vector2.one, new Color(.018f,.023f,.029f,1));
-        AddPanel(menuRoot.transform, new Vector2(.018f,.035f), new Vector2(.982f,.965f), new Color(.045f,.052f,.058f,.98f));
-        AddPanel(menuRoot.transform, new Vector2(.025f,.91f), new Vector2(.975f,.914f), new Color(.72f,.30f,.09f,.95f));
-        AddText(menuRoot.transform, "ХРОНИКИ ПЕПЛА", 52,
-            new Vector2(.12f,.82f), new Vector2(.88f,.93f), new Color(.94f,.66f,.29f),
+        // Reference-inspired full-screen grimdark layout: left title/menu, four
+        // tall class cards in the center, lore/action panel on the right.
+        AddPanel(menuRoot.transform, Vector2.zero, Vector2.one, new Color(.012f,.016f,.021f,1));
+        AddPanel(menuRoot.transform, new Vector2(.008f,.02f), new Vector2(.992f,.98f), new Color(.025f,.029f,.034f,.99f));
+
+        // Left brand panel with ember-lit title and vertical navigation.
+        AddPanel(menuRoot.transform, new Vector2(.012f,.035f), new Vector2(.215f,.965f), new Color(.018f,.021f,.025f,.96f));
+        AddPanel(menuRoot.transform, new Vector2(.028f,.91f), new Vector2(.198f,.914f), new Color(.75f,.31f,.09f,1));
+        AddText(menuRoot.transform, "✦", 70, new Vector2(.055f,.735f), new Vector2(.175f,.91f),
+            new Color(.95f,.52f,.13f), TextAnchor.MiddleCenter, FontStyle.Bold);
+        AddText(menuRoot.transform, "ХРОНИКИ\nПЕПЛА", 43,
+            new Vector2(.018f,.60f), new Vector2(.212f,.77f), new Color(.91f,.72f,.48f),
             TextAnchor.MiddleCenter, FontStyle.Bold);
-        AddText(menuRoot.transform, "ВЫБЕРИТЕ ГЕРОЯ", 20,
-            new Vector2(.2f,.775f), new Vector2(.8f,.83f), new Color(.78f,.77f,.71f),
+        AddPanel(menuRoot.transform, new Vector2(.04f,.575f), new Vector2(.19f,.578f), new Color(.54f,.25f,.10f,1));
+
+        string[] nav = { "Выбрать героя", "Настройки", "Авторы", "Выход" };
+        for (int i=0;i<nav.Length;i++)
+        {
+            float top=.52f-i*.095f;
+            var item=AddPanel(menuRoot.transform,new Vector2(.035f,top-.045f),new Vector2(.195f,top+.018f),
+                i==0?new Color(.30f,.075f,.025f,.98f):new Color(.035f,.039f,.042f,.7f));
+            if(i==0) item.AddComponent<Outline>().effectColor=new Color(.9f,.34f,.08f,1);
+            AddText(item.transform,nav[i],19,new Vector2(.02f,.02f),new Vector2(.98f,.98f),
+                new Color(.87f,.78f,.64f),TextAnchor.MiddleCenter,FontStyle.Normal);
+        }
+
+        AddText(menuRoot.transform, "ВЫБЕРИ СВОЙ ПУТЬ", 18,
+            new Vector2(.25f,.91f), new Vector2(.80f,.965f), new Color(.91f,.70f,.43f),
             TextAnchor.MiddleCenter, FontStyle.Bold);
 
         string[] descriptions = {
-            "Несокрушимая сталь.\nСилен в ближнем бою.",
-            "Древняя магия.\nПовелевает энергией.",
-            "Точность и скрытность.\nПоражает издалека.",
-            "Власть над смертью.\nПоднимает павших."
+            "Сила. Выносливость. Ближний бой.\nМощные удары и стойкость в бою.",
+            "Мана. Контроль. Дальний бой.\nМощные заклинания и разрушительная магия.",
+            "Ловкость. Точность. Дальний бой.\nБыстрые атаки и смертоносные выстрелы.",
+            "Призыв. Сила. Контроль.\nВосстанавливает мёртвых и подчиняет их."
         };
-        for (int i=0; i<4; i++)
+        string[] names = { "ВОИН", "МАГ", "ЭЛЬФ-ЛУЧНИК", "НЕКРОМАНТ" };
+        for (int i=0;i<4;i++)
         {
-            int index = i;
-            float x0 = .035f + i * .235f;
-            float x1 = x0 + .225f;
-            Color accent = i==0 ? new Color(.95f,.32f,.12f) :
-                i==1 ? new Color(.20f,.55f,.95f) :
-                i==2 ? new Color(.36f,.72f,.39f) : new Color(.62f,.34f,.83f);
+            int index=i;
+            float x0=.222f+i*.172f, x1=x0+.164f;
+            Color accent=i==0?new Color(.98f,.34f,.08f):i==1?new Color(.12f,.48f,.94f):
+                i==2?new Color(.43f,.65f,.36f):new Color(.12f,.72f,.68f);
+            var card=AddPanel(menuRoot.transform,new Vector2(x0,.075f),new Vector2(x1,.90f),
+                index==selectedHero?new Color(.075f,.057f,.043f,1):new Color(.028f,.034f,.038f,1));
+            var outline=card.AddComponent<Outline>();
+            outline.effectColor=index==selectedHero?accent:new Color(.30f,.28f,.23f,.95f);
+            outline.effectDistance=index==selectedHero?new Vector2(3,-3):new Vector2(1,-1);
 
-            var card = AddPanel(menuRoot.transform, new Vector2(x0,.19f), new Vector2(x1,.755f),
-                index==selectedHero ? new Color(.13f,.105f,.082f,1) : new Color(.065f,.075f,.082f,1));
-            var portraitObject = new GameObject("Hero portrait " + heroNames[i], typeof(RectTransform), typeof(Image));
-            portraitObject.transform.SetParent(card.transform, false);
-            var portraitRect = portraitObject.GetComponent<RectTransform>();
-            portraitRect.anchorMin = new Vector2(.035f,.245f);
-            portraitRect.anchorMax = new Vector2(.965f,.985f);
-            portraitRect.offsetMin = Vector2.zero; portraitRect.offsetMax = Vector2.zero;
-            var portraitImage = portraitObject.GetComponent<Image>();
-            portraitImage.sprite = AshHeroPortraits.Create(i);
-            portraitImage.preserveAspect = true;
-            portraitImage.raycastTarget = false;
+            var portraitObject=new GameObject("Hero portrait "+names[i],typeof(RectTransform),typeof(Image));
+            portraitObject.transform.SetParent(card.transform,false);
+            var pr=portraitObject.GetComponent<RectTransform>();
+            pr.anchorMin=new Vector2(.025f,.27f); pr.anchorMax=new Vector2(.975f,.99f);
+            pr.offsetMin=Vector2.zero; pr.offsetMax=Vector2.zero;
+            var pi=portraitObject.GetComponent<Image>();
+            pi.sprite=AshHeroPortraits.Create(i); pi.preserveAspect=false; pi.raycastTarget=false;
 
-            // Selected class receives a bright ember frame; other classes remain visible.
-            var frame = card.AddComponent<Outline>();
-            frame.effectColor = index==selectedHero ? accent : new Color(.29f,.30f,.29f,.9f);
-            frame.effectDistance = index==selectedHero ? new Vector2(4,-4) : new Vector2(1,-1);
+            AddPanel(card.transform,new Vector2(.025f,.255f),new Vector2(.975f,.265f),accent);
+            AddText(card.transform,names[i],19,new Vector2(.02f,.185f),new Vector2(.98f,.255f),
+                new Color(.95f,.87f,.72f),TextAnchor.MiddleCenter,FontStyle.Bold);
+            AddText(card.transform,descriptions[i],13,new Vector2(.035f,.025f),new Vector2(.965f,.17f),
+                new Color(.76f,.73f,.67f),TextAnchor.MiddleCenter,FontStyle.Normal);
 
-            AddPanel(card.transform, new Vector2(.04f,.225f), new Vector2(.96f,.235f), accent);
-            AddText(card.transform, heroNames[i], 25,
-                new Vector2(.03f,.115f), new Vector2(.97f,.22f),
-                new Color(.96f,.91f,.80f), TextAnchor.MiddleCenter, FontStyle.Bold);
-            AddText(card.transform, descriptions[i], 15,
-                new Vector2(.04f,.015f), new Vector2(.96f,.12f),
-                new Color(.72f,.74f,.72f), TextAnchor.MiddleCenter, FontStyle.Normal);
-
-            var button = card.AddComponent<Button>();
-            button.targetGraphic = card.GetComponent<Image>();
-            ColorBlock colors = button.colors;
-            colors.normalColor = Color.white;
-            colors.highlightedColor = new Color(1f,.82f,.58f);
-            colors.pressedColor = new Color(.78f,.54f,.30f);
-            button.colors = colors;
-            button.onClick.AddListener(() => SelectHero(index));
+            var button=card.AddComponent<Button>();
+            button.targetGraphic=card.GetComponent<Image>();
+            var colors=button.colors; colors.normalColor=Color.white;
+            colors.highlightedColor=new Color(1f,.82f,.58f); colors.pressedColor=new Color(.78f,.54f,.30f);
+            button.colors=colors;
+            button.onClick.AddListener(()=>SelectHero(index));
         }
 
-        // Wide, phone-friendly action button; its transparent hit target stays above decoration.
-        var start = AddPanel(menuRoot.transform, new Vector2(.34f,.065f), new Vector2(.66f,.155f),
-            selectedHero==0 ? new Color(.46f,.19f,.07f,1) : new Color(.43f,.18f,.065f,1));
-        AddPanel(start.transform, new Vector2(0,.94f), new Vector2(1,1), new Color(.98f,.56f,.16f,1));
-        AddText(start.transform, "НАЧАТЬ ИГРУ   ▶", 27,
-            new Vector2(.02f,.02f), new Vector2(.98f,.98f), new Color(1f,.91f,.72f),
-            TextAnchor.MiddleCenter, FontStyle.Bold);
-        var startHit = new GameObject("Start Game Hit Target", typeof(RectTransform), typeof(Image), typeof(Button));
-        startHit.transform.SetParent(menuRoot.transform, false);
-        var hitRect = startHit.GetComponent<RectTransform>();
-        hitRect.anchorMin = new Vector2(.34f,.065f); hitRect.anchorMax = new Vector2(.66f,.155f);
-        hitRect.offsetMin = Vector2.zero; hitRect.offsetMax = Vector2.zero;
-        var hitImage = startHit.GetComponent<Image>();
-        hitImage.color = new Color(1f,1f,1f,0f);
-        hitImage.raycastTarget = true;
-        var startButton = startHit.GetComponent<Button>();
-        startButton.targetGraphic = hitImage;
+        // Right lore panel and the original working StartGame handler.
+        AddPanel(menuRoot.transform,new Vector2(.918f,.075f),new Vector2(.988f,.90f),new Color(.018f,.022f,.027f,.98f));
+        AddPanel(menuRoot.transform,new Vector2(.93f,.83f),new Vector2(.976f,.833f),new Color(.68f,.42f,.19f,1));
+        AddText(menuRoot.transform,"Выбери\nсвой путь",23,new Vector2(.922f,.75f),new Vector2(.984f,.83f),
+            new Color(.92f,.72f,.46f),TextAnchor.MiddleCenter,FontStyle.Bold);
+        AddText(menuRoot.transform,"Мир Хроник Пепла хранит множество тайн, опасностей и наград. Твой выбор определит не только стиль боя, но и путь в этом мире.",
+            14,new Vector2(.925f,.48f),new Vector2(.982f,.735f),new Color(.77f,.74f,.67f),TextAnchor.UpperLeft,FontStyle.Normal);
+        AddPanel(menuRoot.transform,new Vector2(.93f,.45f),new Vector2(.976f,.453f),new Color(.58f,.37f,.17f,1));
+
+        var start=AddPanel(menuRoot.transform,new Vector2(.925f,.15f),new Vector2(.982f,.245f),new Color(.32f,.075f,.025f,1));
+        start.AddComponent<Outline>().effectColor=new Color(.96f,.38f,.09f,1);
+        AddText(start.transform,"НАЧАТЬ\nИГРУ  ▶",20,new Vector2(.01f,.01f),new Vector2(.99f,.99f),
+            new Color(1f,.87f,.67f),TextAnchor.MiddleCenter,FontStyle.Bold);
+        var startButton=start.AddComponent<Button>(); startButton.targetGraphic=start.GetComponent<Image>();
         startButton.onClick.AddListener(StartGame);
 
         AddText(menuRoot.transform, "ПЕПЕЛ ПОМНИТ ИМЕНА", 13,
-            new Vector2(.03f,.025f), new Vector2(.3f,.065f), new Color(.43f,.46f,.45f),
-            TextAnchor.MiddleLeft, FontStyle.Italic);
-        AddText(menuRoot.transform, heroRoles[selectedHero].ToUpperInvariant(),
-            15, new Vector2(.70f,.075f), new Vector2(.97f,.135f),
-            new Color(.78f,.56f,.29f), TextAnchor.MiddleRight, FontStyle.Bold);
+            new Vector2(.025f,.025f), new Vector2(.21f,.065f), new Color(.46f,.43f,.37f),
+            TextAnchor.MiddleCenter, FontStyle.Italic);
     }
 
     Color HeroColor(int i) { return i==0?new Color(.28f,.22f,.17f):i==1?new Color(.10f,.25f,.34f):i==2?new Color(.15f,.29f,.24f):new Color(.25f,.18f,.31f); }
