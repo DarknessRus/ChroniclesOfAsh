@@ -16,8 +16,8 @@ PlayerSettings:
   applicationIdentifier:
     Android: com.ashchronicles.game
   bundleVersion: 0.1.0
-  bundleVersionCode: 1
-  AndroidBundleVersionCode: 1
+  bundleVersionCode: 72
+  AndroidBundleVersionCode: 72
   AndroidMinSdkVersion: 23
   AndroidTargetSdkVersion: 34
   scriptingBackend:
