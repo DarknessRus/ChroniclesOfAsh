@@ -13,6 +13,13 @@ public static class AshRealisticWorldVisuals
     static Texture2D groundNormal;
     static Texture2D groundRoughness;
     static Texture2D groundSmoothness;
+    static Texture2D forestGroundTexture;
+    static Texture2D forestGroundNormal;
+    static Texture2D forestGroundRoughness;
+    static Texture2D snowTexture;
+    static Texture2D snowNormal;
+    static Texture2D snowRoughness;
+    static Texture2D snowSmoothness;
     static Texture2D rockTexture;
     static Texture2D rockNormal;
     static Texture2D rockRoughness;
@@ -33,6 +40,7 @@ public static class AshRealisticWorldVisuals
     {
         ApplyTerrainSurface(root);
         ApplyRockSurfaces(root);
+        ApplySnowSurfaces(root);
         ApplyBarkSurfaces(root);
         ApplyWaterSurface(root);
         ApplyAtmosphere();
@@ -45,9 +53,12 @@ public static class AshRealisticWorldVisuals
         if (terrain == null) return;
         Renderer renderer = terrain.GetComponent<Renderer>();
         if (renderer == null) return;
-        groundTexture = Resources.Load<Texture2D>("PBR/GrassGround/grass_ground_diff_1k");
-        groundNormal = Resources.Load<Texture2D>("PBR/GrassGround/grass_ground_nor_dx_1k");
-        groundRoughness = Resources.Load<Texture2D>("PBR/GrassGround/grass_ground_rough_1k");
+        forestGroundTexture = Resources.Load<Texture2D>("PBR/ForestGround/forest_ground_01_diff_2k");
+        forestGroundNormal = Resources.Load<Texture2D>("PBR/ForestGround/forest_ground_01_nor_dx_2k");
+        forestGroundRoughness = Resources.Load<Texture2D>("PBR/ForestGround/forest_ground_01_rough_2k");
+        groundTexture = forestGroundTexture != null ? forestGroundTexture : Resources.Load<Texture2D>("PBR/GrassGround/grass_ground_diff_1k");
+        groundNormal = forestGroundNormal != null ? forestGroundNormal : Resources.Load<Texture2D>("PBR/GrassGround/grass_ground_nor_dx_1k");
+        groundRoughness = forestGroundRoughness != null ? forestGroundRoughness : Resources.Load<Texture2D>("PBR/GrassGround/grass_ground_rough_1k");
         if (groundTexture == null) groundTexture = MakeGroundTexture();
         if (groundNormal == null) groundNormal = MakeGroundNormal();
         if (groundRoughness != null && groundSmoothness == null)
@@ -189,6 +200,31 @@ public static class AshRealisticWorldVisuals
                 if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", .08f);
                 if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", .08f);
             }
+        }
+    }
+
+    static void ApplySnowSurfaces(Transform root)
+    {
+        snowTexture = Resources.Load<Texture2D>("PBR/Snow/snow_02_diff_2k");
+        snowNormal = Resources.Load<Texture2D>("PBR/Snow/snow_02_nor_dx_2k");
+        snowRoughness = Resources.Load<Texture2D>("PBR/Snow/snow_02_rough_2k");
+        if (snowRoughness != null && snowSmoothness == null)
+            snowSmoothness = MakeSmoothnessMap(snowRoughness, "Ash Snow - smoothness from CC0 roughness");
+        if (snowTexture == null || snowNormal == null)
+        {
+            Debug.LogError("[Ash Chronicles] Required 2K snow texture maps are missing from Resources/PBR/Snow.");
+            return;
+        }
+        Shader shader = Shader.Find("Standard");
+        if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null) return;
+        Material snowMaterial = CreatePbrMaterial("Ash Distant Peaks - 2K snow PBR", shader,
+            snowTexture, snowNormal, snowSmoothness, new Color(.78f,.82f,.86f), new Vector2(2.8f,2.8f));
+        foreach (Transform item in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (!item.name.StartsWith("Distant snow mountain -")) continue;
+            Renderer renderer = item.GetComponent<Renderer>();
+            if (renderer != null) renderer.sharedMaterial = snowMaterial;
         }
     }
 
