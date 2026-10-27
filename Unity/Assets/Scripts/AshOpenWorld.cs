@@ -41,14 +41,27 @@ public static class AshOpenWorld
         {
             float wx = ((float)x / Grid - .5f) * WorldSize;
             float wz = ((float)z / Grid - .5f) * WorldSize;
-            float broad = Mathf.Sin(wx * .034f) * 4.6f + Mathf.Cos(wz * .031f) * 4.1f;
-            float detail = (Mathf.PerlinNoise((wx + 450f) * .035f, (wz + 450f) * .035f) - .5f) * 3.8f
-                         + (Mathf.PerlinNoise((wx + 90f) * .095f, (wz + 90f) * .095f) - .5f) * 1.1f;
-            float ridgeNoise = Mathf.PerlinNoise((wx + 350f) * .012f, (wz + 350f) * .012f);
-            float ridge = Mathf.Pow(Mathf.Clamp01((ridgeNoise - .40f) / .60f), 1.35f) * 22f;
-            float riverDistance = Mathf.Abs(wx - RiverX(wz));
-            float bank = Mathf.Clamp01((riverDistance - 4.2f) / 10f);
-            float y = Mathf.Lerp(-.08f, broad + detail + ridge, bank);
+            // Layered macro terrain: broad valley shoulders, broken ridgelines and
+            // smaller erosion detail. Keep the river corridor low and gently sloped.
+            float macro = Mathf.Sin(wx * .021f + Mathf.Sin(wz * .013f) * .8f) * 5.2f
+                        + Mathf.Cos(wz * .024f + wx * .009f) * 4.4f;
+            float rolling = (Mathf.PerlinNoise((wx + 450f) * .018f, (wz + 450f) * .018f) - .5f) * 9.5f;
+            float erosion = (Mathf.PerlinNoise((wx + 90f) * .062f, (wz + 90f) * .062f) - .5f) * 2.4f
+                          + (Mathf.PerlinNoise((wx - 170f) * .15f, (wz + 270f) * .15f) - .5f) * .75f;
+            // Ridged noise produces broken angular uplands rather than a smooth noise dome.
+            float n = Mathf.PerlinNoise((wx + 350f) * .010f, (wz + 350f) * .010f);
+            float ridgeNoise = 1f - Mathf.Abs(n * 2f - 1f);
+            float ridge = Mathf.Pow(Mathf.Clamp01((ridgeNoise - .48f) / .52f), 2.0f) * 24f;
+            // A shallow central valley with steeper shoulders; the river follows its floor.
+            float valleyAxis = RiverX(wz);
+            float valleyDistance = Mathf.Abs(wx - valleyAxis);
+            float valleyShoulder = Mathf.Clamp01((valleyDistance - 10f) / 43f);
+            float riverDistance = Mathf.Abs(wx - valleyAxis);
+            float riverBank = Mathf.Clamp01((riverDistance - 3.6f) / 8.5f);
+            float upland = macro + rolling + erosion + ridge * valleyShoulder;
+            float y = Mathf.Lerp(-.08f, upland, riverBank);
+            // Pull the broad valley floor down smoothly beyond the river banks.
+            y -= Mathf.Exp(-Mathf.Pow(valleyDistance / 31f, 2f)) * 2.2f;
             int index = z * (Grid + 1) + x;
             vertices[index] = new Vector3(wx, y, wz);
             uv[index] = new Vector2((float)x / Grid * 18f, (float)z / Grid * 18f);
