@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Fetch high-detail CC0 2K PBR maps into Unity Resources for an offline Android build.
 
-The Unity runtime keeps the historical resource filenames for compatibility, but
-the actual downloaded source maps are 2K, not 1K.
+Unity keeps legacy local filenames for compatibility; download URLs must use
+Poly Haven's actual asset slug as the filename prefix.
 """
 from pathlib import Path
 from urllib.error import HTTPError
@@ -27,7 +27,8 @@ MAPS = (
 )
 
 for source_asset, local_prefix, map_name, relative_path in MAPS:
-    url = f"{BASE}/{source_asset}/{local_prefix}_{map_name}_2k.jpg"
+    # Source names follow the Poly Haven asset slug, not the legacy local prefix.
+    url = f"{BASE}/{source_asset}/{source_asset}_{map_name}_2k.jpg"
     destination = ROOT / relative_path
     destination.parent.mkdir(parents=True, exist_ok=True)
     request = Request(url, headers={"User-Agent": "ChroniclesOfAsh-Android-Build/1.0"})
