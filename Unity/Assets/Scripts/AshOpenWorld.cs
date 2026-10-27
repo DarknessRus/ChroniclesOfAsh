@@ -100,10 +100,10 @@ public static class AshOpenWorld
 
     static void BuildMountainRanges(Transform root)
     {
-        for (int i = 0; i < 38; i++)
+        for (int i = 0; i < 44; i++)
         {
             float side = i % 2 == 0 ? -1f : 1f;
-            float z = -48f + i * 5.35f;
+            float z = -55f + i * 5.15f;
             float x = side * (67f + Mathf.Sin(i * 1.7f) * 18f);
             float h = 27f + Mathf.Abs(Mathf.Sin(i * 2.13f)) * 39f;
             float w = 21f + (i % 4) * 5.5f;
@@ -117,7 +117,7 @@ public static class AshOpenWorld
     static void BuildRockFields(Transform root)
     {
         // Clusters of boulders beside trails and along the riverbank, never forming a wall across the path.
-        for (int i = 0; i < 115; i++)
+        for (int i = 0; i < 145; i++)
         {
             float a = i * 2.39996f;
             float radius = 11f + (i % 19) * 5.2f;
@@ -137,7 +137,7 @@ public static class AshOpenWorld
     static GameObject CreateJaggedRock(Transform root, string name, Vector3 position, Vector3 scale, Color color, int rings, float jaggedness)
     {
         // Shared low-poly rock topology with a perturbed crown and irregular footprint.
-        int sides = 7;
+        int sides = 9;
         var verts = new Vector3[sides * rings + 2];
         var tris = new List<int>();
         verts[0] = new Vector3(0f, .5f, 0f);
