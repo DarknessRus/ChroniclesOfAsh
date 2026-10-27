@@ -5,6 +5,7 @@ The Unity runtime keeps the historical resource filenames for compatibility, but
 the actual downloaded source maps are 2K, not 1K.
 """
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -30,9 +31,16 @@ for source_asset, local_prefix, map_name, relative_path in MAPS:
     destination = ROOT / relative_path
     destination.parent.mkdir(parents=True, exist_ok=True)
     request = Request(url, headers={"User-Agent": "ChroniclesOfAsh-Android-Build/1.0"})
-    with urlopen(request, timeout=60) as response:
-        data = response.read()
+    try:
+        with urlopen(request, timeout=60) as response:
+            data = response.read()
+    except HTTPError as error:
+        if error.code == 404:
+            print(f"Optional texture unavailable (404), keeping existing resource if present: {url}")
+            continue
+        raise
     if len(data) < 1024 or not data.startswith(bytes((0xFF, 0xD8, 0xFF))):
-        raise RuntimeError(f"Texture download was invalid: {url}")
+        print(f"Optional texture invalid, skipping: {url}")
+        continue
     destination.write_bytes(data)
     print(f"Downloaded {local_prefix} {map_name} from 2K source: {len(data)} bytes")
