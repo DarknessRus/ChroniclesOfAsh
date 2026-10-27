@@ -59,14 +59,23 @@ public static class AshGroundSafety
         float x = Mathf.Clamp(worldPosition.x, -139.5f, 139.5f);
         float z = Mathf.Clamp(worldPosition.z - TerrainOffsetZ, -139.5f, 139.5f);
 
-        float broad = Mathf.Sin(x * 0.034f) * 4.6f + Mathf.Cos(z * 0.031f) * 4.1f;
-        float detail = (Mathf.PerlinNoise((x + 450f) * 0.035f, (z + 450f) * 0.035f) - 0.5f) * 3.8f
-                     + (Mathf.PerlinNoise((x + 90f) * 0.095f, (z + 90f) * 0.095f) - 0.5f) * 1.1f;
-        float ridgeNoise = Mathf.PerlinNoise((x + 350f) * 0.012f, (z + 350f) * 0.012f);
-        float ridge = Mathf.Pow(Mathf.Clamp01((ridgeNoise - 0.40f) / 0.60f), 1.35f) * 22f;
-        float riverDistance = Mathf.Abs(x - RiverX(z));
-        float bank = Mathf.Clamp01((riverDistance - 4.2f) / 10f);
-        float localY = Mathf.Lerp(-0.08f, broad + detail + ridge, bank);
+        // Keep this height function identical to AshOpenWorld.BuildTerrain.
+        // Otherwise the player is snapped to an imaginary surface above/below the mesh.
+        float macro = Mathf.Sin(x * .021f + Mathf.Sin(z * .013f) * .8f) * 5.2f
+                    + Mathf.Cos(z * .024f + x * .009f) * 4.4f;
+        float rolling = (Mathf.PerlinNoise((x + 450f) * .018f, (z + 450f) * .018f) - .5f) * 9.5f;
+        float erosion = (Mathf.PerlinNoise((x + 90f) * .062f, (z + 90f) * .062f) - .5f) * 2.4f
+                      + (Mathf.PerlinNoise((x - 170f) * .15f, (z + 270f) * .15f) - .5f) * .75f;
+        float n = Mathf.PerlinNoise((x + 350f) * .010f, (z + 350f) * .010f);
+        float ridgeNoise = 1f - Mathf.Abs(n * 2f - 1f);
+        float ridge = Mathf.Pow(Mathf.Clamp01((ridgeNoise - .48f) / .52f), 2.0f) * 24f;
+        float valleyAxis = RiverX(z);
+        float valleyDistance = Mathf.Abs(x - valleyAxis);
+        float valleyShoulder = Mathf.Clamp01((valleyDistance - 10f) / 43f);
+        float riverBank = Mathf.Clamp01((valleyDistance - 3.6f) / 8.5f);
+        float upland = macro + rolling + erosion + ridge * valleyShoulder;
+        float localY = Mathf.Lerp(-.08f, upland, riverBank);
+        localY -= Mathf.Exp(-Mathf.Pow(valleyDistance / 31f, 2f)) * 2.2f;
         return localY + TerrainOffsetY;
     }
 
