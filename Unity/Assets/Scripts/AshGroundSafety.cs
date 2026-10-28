@@ -75,6 +75,19 @@ public static class AshGroundSafety
                 item.name == "Ground safety floor")
                 continue;
 
+            // Only reposition actual ground props. Never move group containers, the
+            // river, terrain, lighting, or camera roots based on combined child bounds.
+            string n = item.name;
+            bool isGroundProp = n == "Dark pine" || n == "Weathered boulder" ||
+                n == "Jagged mountain cliff" || n == "Worn trail stone" ||
+                n.StartsWith("CC0 mossy boulder cluster") ||
+                n.StartsWith("CC0 weathered cliff rock") ||
+                n.StartsWith("CC0 fallen tree trunk") ||
+                n.StartsWith("CC0 forest moss") ||
+                n == "Layered valley cliff" || n == "Cliff ledge" ||
+                n == "Distant jagged mountain" || n == "Mountain broken crown";
+            if (!isGroundProp) { skipped++; continue; }
+
             Renderer[] renderers = item.GetComponentsInChildren<Renderer>(true);
             if (renderers.Length == 0) { skipped++; continue; }
 
