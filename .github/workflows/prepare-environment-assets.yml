@@ -6,7 +6,6 @@ on:
       - environment-assets-prep
     paths:
       - '.github/workflows/prepare-environment-assets.yml'
-      - '.github/scripts/download_environment_models.py'
   workflow_dispatch:
 
 permissions:
