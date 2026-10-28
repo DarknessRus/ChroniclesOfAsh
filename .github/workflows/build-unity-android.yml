@@ -3,14 +3,14 @@ name: Build Unity Android APK
 # Generated contour textures are created during CI; keep the build running and allow those generated files.
 concurrency:
   group: unity-android-${{ github.ref }}
-  cancel-in-progress: true
+  # Do not mark earlier runs as cancelled when a newer commit arrives.
+  cancel-in-progress: false
 on:
   workflow_dispatch:
   push:
     paths:
       - 'Unity/**'
       - 'tools/**'
-      - '.github/workflows/build-unity-android.yml'
 jobs:
   build:
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
