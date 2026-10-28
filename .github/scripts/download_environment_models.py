@@ -1,18 +1,11 @@
 #!/usr/bin/env python3
-"""Download a small, mobile-conscious set of CC0 environment models from Poly Haven.
-
-The official Poly Haven files API supplies direct FBX download URLs. Model archives are
-kept at 1K texture resolution where available, unpacked into Unity Resources so Unity's
-FBX importer brings the meshes and their companion maps into the Android build.
-"""
+"""Download a mobile-conscious set of CC0 environment models from Poly Haven's API."""
 from __future__ import annotations
 
 import json
-import shutil
 import sys
 import urllib.error
 import urllib.request
-import zipfile
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -20,17 +13,16 @@ ROOT = Path(__file__).resolve().parents[2]
 DEST = ROOT / "Unity/Assets/Resources/EnvironmentModels"
 API = "https://api.polyhaven.com/files/"
 ASSETS = (
-    # Evergreen trees suitable for the valley forests.
     ("fir_tree_01", "conifer"),
     ("pine_tree_01", "conifer"),
-    # Mossy boulders and a broken rock face for the cliffs and riverbanks.
     ("rock_moss_set_01", "rocks"),
     ("rock_face_02", "cliffs"),
-    # Dead wood and ground cover for forest-floor variation.
     ("dead_tree_trunk_02", "deadwood"),
     ("moss_01", "groundcover"),
 )
 USER_AGENT = "ChroniclesOfAsh-EnvironmentAssetPrep/1.0"
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".tga", ".exr"}
+MAX_FILE_BYTES = 90 * 1024 * 1024
 
 
 def fetch(url: str, timeout: int = 120) -> bytes:
@@ -39,72 +31,56 @@ def fetch(url: str, timeout: int = 120) -> bytes:
         return response.read()
 
 
-def collect_urls(value, path=()):
-    """Yield (key path, URL) pairs from Poly Haven's nested API response."""
+def collect_records(value, path=()):
+    """Yield nested Poly Haven terminal download records and their key paths."""
     if isinstance(value, dict):
-        for key, child in value.items():
-            next_path = path + (str(key).lower(),)
-            if key == "url" and isinstance(child, str) and child.startswith("https://"):
-                yield next_path, child
-            else:
-                yield from collect_urls(child, next_path)
+        if isinstance(value.get("url"), str) and value["url"].startswith("https://"):
+            yield path, value
+        else:
+            for key, child in value.items():
+                yield from collect_records(child, path + (str(key).lower(),))
     elif isinstance(value, list):
         for index, child in enumerate(value):
-            yield from collect_urls(child, path + (str(index),))
+            yield from collect_records(child, path + (str(index),))
 
 
-def choose_fbx_url(payload: dict) -> str:
-    candidates = []
-    for key_path, url in collect_urls(payload):
-        joined = "/".join(key_path)
-        if "fbx" not in joined:
-            continue
-        # Prefer the 1K download, then 2K; prefer an archive URL if multiple are listed.
-        score = 100 if "1k" in joined else 70 if "2k" in joined else 10
-        suffix = urlparse(url).path.lower()
-        if suffix.endswith(".zip"):
-            score += 15
-        candidates.append((score, url))
-    if not candidates:
-        raise RuntimeError("Poly Haven API returned no FBX download URL")
-    candidates.sort(reverse=True)
-    return candidates[0][1]
+def select_model_and_maps(payload: dict):
+    records = list(collect_records(payload))
+    fbx = []
+    maps = []
+    for path, record in records:
+        path_text = "/".join(path).lower()
+        url = record["url"]
+        ext = Path(urlparse(url).path).suffix.lower()
+        if "fbx" in path_text and ext == ".fbx":
+            score = 100 if "1k" in path_text else 80 if "2k" in path_text else 10
+            fbx.append((score, record))
+        elif ext in IMAGE_EXTS and ("1k" in path_text or "2k" in path_text):
+            # Keep maps to 1K when available for mobile. Prefer 1K over 2K.
+            score = 100 if "1k" in path_text else 50
+            maps.append((score, path, record))
+    if not fbx:
+        raise RuntimeError("Poly Haven API returned no direct FBX file URL")
+    fbx.sort(key=lambda item: item[0], reverse=True)
+    maps.sort(key=lambda item: (item[0], "/".join(item[1])), reverse=True)
+    return fbx[0][1], maps
 
 
-def extract_asset(asset_id: str, category: str, archive_data: bytes) -> int:
-    target = DEST / category / asset_id
-    target.mkdir(parents=True, exist_ok=True)
-    archive_path = target / "_download.zip"
-    archive_path.write_bytes(archive_data)
-    extracted = 0
-    try:
-        with zipfile.ZipFile(archive_path) as archive:
-            for item in archive.infolist():
-                if item.is_dir():
-                    continue
-                name = Path(item.filename).name
-                suffix = Path(name).suffix.lower()
-                # Ignore hidden metadata, previews and unrelated formats; retain FBX,
-                # image maps and material sidecars needed by Unity's importer.
-                if name.startswith(".") or suffix not in {
-                    ".fbx", ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".tga",
-                    ".mtl", ".txt", ".json"
-                }:
-                    continue
-                # Flatten each archive into its own isolated model folder, avoiding
-                # duplicate texture names colliding between different assets.
-                # Each asset has its own folder, so preserve texture basenames exactly;
-                # FBX materials often refer to those names internally.
-                output_name = f"{asset_id}.fbx" if suffix == ".fbx" else name
-                out = target / output_name
-                with archive.open(item) as source, out.open("wb") as destination:
-                    shutil.copyfileobj(source, destination)
-                extracted += 1
-    finally:
-        archive_path.unlink(missing_ok=True)
-    if not any(p.suffix.lower() == ".fbx" for p in target.iterdir()):
-        raise RuntimeError(f"{asset_id}: archive contained no FBX file")
-    return extracted
+def save_download(url: str, path: Path, expected_size=None) -> int:
+    size_hint = expected_size if isinstance(expected_size, int) else None
+    if size_hint is not None and size_hint > MAX_FILE_BYTES:
+        raise RuntimeError(f"refusing oversized file ({size_hint:,} bytes): {url}")
+    data = fetch(url)
+    if len(data) < 1024:
+        raise RuntimeError(f"download unexpectedly small ({len(data)} bytes): {url}")
+    if len(data) > MAX_FILE_BYTES:
+        raise RuntimeError(f"refusing oversized file ({len(data):,} bytes): {url}")
+    # HTML error pages occasionally arrive with a successful status; reject them.
+    if data[:64].lstrip().lower().startswith((b"<!doctype html", b"<html")):
+        raise RuntimeError(f"server returned HTML instead of an asset: {url}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+    return len(data)
 
 
 def main() -> None:
@@ -113,29 +89,40 @@ def main() -> None:
     total_bytes = 0
     failures = []
     for asset_id, category in ASSETS:
+        target = DEST / category / asset_id
+        target.mkdir(parents=True, exist_ok=True)
         print(f"Resolving CC0 model: {asset_id}", flush=True)
         try:
             payload = json.loads(fetch(API + asset_id).decode("utf-8"))
-            url = choose_fbx_url(payload)
-            archive = fetch(url)
-            if len(archive) < 1024:
-                raise RuntimeError(f"download unexpectedly small ({len(archive)} bytes)")
-            if not zipfile.is_zipfile(__import__("io").BytesIO(archive)):
-                raise RuntimeError("the selected FBX download is not a ZIP archive")
-            count = extract_asset(asset_id, category, archive)
-            total_files += count
-            total_bytes += len(archive)
-            print(f"OK {asset_id}: {count} model/texture files, {len(archive):,} downloaded bytes")
+            model_record, maps = select_model_and_maps(payload)
+            model_path = target / f"{asset_id}.fbx"
+            model_size = save_download(model_record["url"], model_path, model_record.get("size"))
+            total_files += 1
+            total_bytes += model_size
+            print(f"  FBX: {model_size:,} bytes -> {model_path}", flush=True)
+
+            # The FBX references companion images by basename. Keep their original names
+            # inside this model-specific folder so the Unity importer can resolve them.
+            downloaded_names = set()
+            for _, _, record in maps:
+                url = record["url"]
+                filename = Path(urlparse(url).path).name
+                if not filename or filename in downloaded_names:
+                    continue
+                downloaded_names.add(filename)
+                size = save_download(url, target / filename, record.get("size"))
+                total_files += 1
+                total_bytes += size
+            print(f"  Companion texture maps: {len(downloaded_names)}", flush=True)
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError,
-                json.JSONDecodeError, RuntimeError, zipfile.BadZipFile) as error:
+                json.JSONDecodeError, RuntimeError) as error:
             failures.append(f"{asset_id}: {error}")
             print(f"FAILED {asset_id}: {error}", file=sys.stderr, flush=True)
 
-    # Preserve license and provenance beside the downloaded resources.
     (DEST / "ASSET_SOURCES.txt").write_text(
         "Chronicles of Ash environment models\n"
-        "Source: Poly Haven official public files API (https://api.polyhaven.com/)\n"
-        "License: CC0 1.0 Universal; commercial use and modification permitted.\n"
+        "Source: Poly Haven official public API (https://api.polyhaven.com/)\n"
+        "License: CC0 1.0 Universal. The API requires a clear Poly Haven credit in the product.\n"
         "Assets: fir_tree_01, pine_tree_01, rock_moss_set_01, rock_face_02, "
         "dead_tree_trunk_02, moss_01\n"
         "Asset pages: https://polyhaven.com/a/fir_tree_01 ; "
@@ -152,7 +139,7 @@ def main() -> None:
             print(" - " + failure, file=sys.stderr)
         raise SystemExit(1)
     print(f"\nEnvironment download complete: {len(ASSETS)} CC0 models, "
-          f"{total_files} model/texture files, {total_bytes:,} archive bytes.")
+          f"{total_files} files, {total_bytes:,} downloaded bytes.")
 
 
 if __name__ == "__main__":
