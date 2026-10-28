@@ -19,7 +19,7 @@ ASSETS = (
     ("moss_01", "groundcover"),
 )
 USER_AGENT = "ChroniclesOfAsh-EnvironmentAssetPrep/1.0"
-IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".tga", ".exr"}
+IMAGE_EXTS = {".jpg", ".jpeg", ".png"}
 MAX_FILE_BYTES = 90 * 1024 * 1024
 
 
@@ -54,7 +54,10 @@ def select_model_and_maps(payload: dict):
             score = 100 if "1k" in path_text else 80 if "2k" in path_text else 10
             fbx.append((score, record))
         elif ext in IMAGE_EXTS and "1k" in path_text:
-            # The Android build uses 1K maps to control APK size and memory use.
+            # JPG is sufficient for opaque maps; keep PNG only for alpha masks.
+            # Avoid EXR/TIFF and duplicate PNG variants to reduce mobile APK size.
+            if ext == ".png" and "alpha" not in path_text:
+                continue
             maps.append((100, path, record))
     if not fbx:
         raise RuntimeError("Poly Haven API returned no direct FBX file URL")
@@ -88,6 +91,14 @@ def main() -> None:
     for asset_id, category in ASSETS:
         target = DEST / category / asset_id
         target.mkdir(parents=True, exist_ok=True)
+        # Clean duplicates from an earlier broad download, retaining the FBX and
+        # mobile-ready JPG maps (plus PNG alpha masks, where needed).
+        for old_file in target.iterdir():
+            suffix = old_file.suffix.lower()
+            if not old_file.is_file() or suffix == ".fbx":
+                continue
+            if suffix not in IMAGE_EXTS or (suffix == ".png" and "alpha" not in old_file.name.lower()):
+                old_file.unlink()
         print(f"Resolving CC0 model: {asset_id}", flush=True)
         try:
             payload = json.loads(fetch(API + asset_id).decode("utf-8"))
