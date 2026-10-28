@@ -54,6 +54,55 @@ public static class AshGroundSafety
             if (collider != null) collider.isTrigger = false;
     }
 
+    /// <summary>
+    /// Final grounding pass against the actual terrain mesh collider, not only the
+    /// procedural height formula. This corrects pivot offsets and any small mismatch
+    /// between generated object placement and the rendered landscape.
+    /// </summary>
+    public static void AlignSceneryToTerrain(Transform root)
+    {
+        if (root == null) return;
+        Transform terrain = root.Find("Open World - sculpted ash valley");
+        if (terrain == null) return;
+        MeshCollider terrainCollider = terrain.GetComponent<MeshCollider>();
+        if (terrainCollider == null || terrainCollider.sharedMesh == null) return;
+
+        int aligned = 0;
+        int skipped = 0;
+        foreach (Transform item in root)
+        {
+            if (item == terrain || item.name == "Winding river - cold reflective water" ||
+                item.name == "Ground safety floor")
+                continue;
+
+            Renderer[] renderers = item.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0) { skipped++; continue; }
+
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+                bounds.Encapsulate(renderers[i].bounds);
+
+            Vector3 rayOrigin = new Vector3(item.position.x, 500f, item.position.z);
+            RaycastHit hit;
+            if (!terrainCollider.Raycast(new Ray(rayOrigin, Vector3.down), out hit, 1000f))
+            {
+                skipped++;
+                continue;
+            }
+
+            // Set the rendered bottom on the mesh surface with a tiny anti-z-fighting lift.
+            float delta = hit.point.y + 0.015f - bounds.min.y;
+            if (Mathf.Abs(delta) > 0.001f)
+            {
+                item.position += Vector3.up * delta;
+                aligned++;
+            }
+        }
+
+        Debug.Log("[Ash Chronicles] Final terrain grounding pass: aligned=" + aligned +
+            ", skipped=" + skipped + ", terrainCollider=" + terrainCollider.enabled);
+    }
+
     public static float SampleGroundHeight(Vector3 worldPosition)
     {
         float x = Mathf.Clamp(worldPosition.x, -139.5f, 139.5f);
