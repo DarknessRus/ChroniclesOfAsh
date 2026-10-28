@@ -106,7 +106,7 @@ const server = http.createServer(async (req, res) => {
       }
       const worldContent = worldData.choices?.[0]?.message?.content;
       if (typeof worldContent !== "string") throw new Error("Provider response has no world profile");
-      const raw = JSON.parse(worldContent.replace(/^\\s*```(?:json)?/i, "").replace(/```\\s*$/, "").trim());
+      const raw = JSON.parse(worldContent.replace(/^\s*```(?:json)?/i, "").replace(/```\s*$/, "").trim());
       const numberInRange = (value, min, max, fallback) => {
         const n = Number(value);
         return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
