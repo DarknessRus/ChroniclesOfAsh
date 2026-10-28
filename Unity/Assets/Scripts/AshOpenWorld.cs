@@ -128,6 +128,9 @@ public static class AshOpenWorld
         const int steps = 180;
         var vertices = new Vector3[(steps + 1) * 2];
         var triangles = new int[steps * 6];
+        Transform terrainTransform = root.Find("Open World - sculpted ash valley");
+        MeshCollider terrainCollider = terrainTransform != null
+            ? terrainTransform.GetComponent<MeshCollider>() : null;
         for (int i = 0; i <= steps; i++)
         {
             float z = -85f + i;
@@ -135,8 +138,8 @@ public static class AshOpenWorld
             float worldZ = z + 45f;
             // Follow the actual generated valley floor at both banks. A fixed Y value
             // placed the entire river several metres above the terrain mesh.
-            float leftY = AshGroundSafety.SampleGroundHeight(new Vector3(x - 3.7f, 0f, worldZ)) + 0.10f;
-            float rightY = AshGroundSafety.SampleGroundHeight(new Vector3(x + 3.7f, 0f, worldZ)) + 0.10f;
+            float leftY = RiverBankHeight(terrainCollider, x - 3.7f, worldZ);
+            float rightY = RiverBankHeight(terrainCollider, x + 3.7f, worldZ);
             vertices[i*2] = new Vector3(x - 3.7f, leftY, worldZ);
             vertices[i*2+1] = new Vector3(x + 3.7f, rightY, worldZ);
             if (i < steps)
@@ -153,6 +156,20 @@ public static class AshOpenWorld
         go.AddComponent<MeshFilter>().sharedMesh = m;
         go.AddComponent<MeshRenderer>().sharedMaterial = AshMaterials.Create(new Color(.035f,.15f,.20f,.92f), .82f);
         // Water remains a visual surface; the terrain collider beneath it stays walkable.
+    }
+
+    static float RiverBankHeight(MeshCollider terrainCollider, float x, float worldZ)
+    {
+        // Snap each water edge to the actual collider used by the rendered terrain.
+        // The formula fallback keeps generation safe if a collider is unavailable.
+        if (terrainCollider != null && terrainCollider.enabled)
+        {
+            RaycastHit hit;
+            if (terrainCollider.Raycast(new Ray(new Vector3(x, 500f, worldZ), Vector3.down),
+                out hit, 1000f))
+                return hit.point.y + 0.055f;
+        }
+        return AshGroundSafety.SampleGroundHeight(new Vector3(x, 0f, worldZ)) + 0.055f;
     }
 
     static void BuildMountainRanges(Transform root)
