@@ -158,7 +158,12 @@ public static class AshOpenWorld
             float h = 27f + Mathf.Abs(Mathf.Sin(i * 2.13f)) * 39f;
             float w = 21f + (i % 4) * 5.5f;
             float d = 19f + (i % 3) * 6f;
-            var go = CreateJaggedRock(root, "Jagged mountain cliff", new Vector3(x, h * .43f, z + 45f),
+            float worldZ = z + 45f;
+            float groundY = AshGroundSafety.SampleGroundHeight(new Vector3(x, 0f, worldZ));
+            // The terrain is procedurally uneven; anchor each cliff to its actual local ground
+            // height instead of assuming the valley floor is at Y=0.
+            var go = CreateJaggedRock(root, "Jagged mountain cliff",
+                new Vector3(x, groundY + h * .46f, worldZ),
                 new Vector3(w, h, d), new Color(.095f,.115f,.13f), 9, 2.8f);
             go.transform.rotation = Quaternion.Euler(0, i * 29f, Mathf.Sin(i) * 5f);
         }
@@ -177,9 +182,13 @@ public static class AshOpenWorld
             // Keep the central travel corridor open.
             if (Mathf.Abs(x) < 5.5f && z > 4f && z < 86f) continue;
             float size = 0.8f + Mathf.Abs(Mathf.Sin(i * 3.7f)) * 2.4f;
-            float y = -0.05f + size * .30f;
+            Vector3 rockScale = new Vector3(size * (1.1f + (i%3)*.22f), size * (.65f + (i%4)*.1f), size);
+            float groundY = AshGroundSafety.SampleGroundHeight(new Vector3(x, 0f, z));
+            // Mesh origin is at its centre, so raise it by half its scaled height and bury
+            // it slightly into the terrain to avoid floating boulders.
+            float y = groundY + rockScale.y * .46f;
             CreateJaggedRock(root, "Weathered boulder", new Vector3(x, y, z),
-                new Vector3(size * (1.1f + (i%3)*.22f), size * (.65f + (i%4)*.1f), size),
+                rockScale,
                 i%4==0 ? new Color(.23f,.22f,.20f) : new Color(.13f,.15f,.16f), 4, .75f);
         }
     }
@@ -266,7 +275,8 @@ public static class AshOpenWorld
             if (Mathf.Abs(x) < 7f && z > 5f && z < 36f) continue;
             var tree = new GameObject("Dark pine");
             tree.transform.SetParent(root, false);
-            tree.transform.position = new Vector3(x, -0.05f, z);
+            float groundY = AshGroundSafety.SampleGroundHeight(new Vector3(x, 0f, z));
+            tree.transform.position = new Vector3(x, groundY, z);
             tree.transform.rotation = Quaternion.Euler(0, i * 37f, 0);
             var trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             trunk.name = "Pine trunk"; trunk.transform.SetParent(tree.transform, false);
@@ -353,7 +363,10 @@ public static class AshOpenWorld
             float x = Mathf.Sin(i * .075f) * 4f - 5f;
             var stone = GameObject.CreatePrimitive(PrimitiveType.Cube);
             stone.name = "Worn trail stone"; stone.transform.SetParent(root, false);
-            stone.transform.position = new Vector3(x,.22f,z+45f);
+            float worldZ = z + 45f;
+            float groundY = AshGroundSafety.SampleGroundHeight(new Vector3(x, 0f, worldZ));
+            // Trail stones are centred meshes; place their underside just below the ground.
+            stone.transform.position = new Vector3(x, groundY + .075f, worldZ);
             stone.transform.rotation = Quaternion.Euler(0,Mathf.Sin(i*.2f)*10f,0);
             stone.transform.localScale = new Vector3(2.3f,.18f,1.5f);
             stone.GetComponent<Renderer>().sharedMaterial = MaterialFor(new Color(.20f,.20f,.18f));
