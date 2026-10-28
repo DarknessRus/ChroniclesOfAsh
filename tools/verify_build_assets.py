@@ -29,6 +29,15 @@ REQUIRED = [
     Path("Unity/Assets/Resources/PBR/Snow/snow_02_rough_2k.jpg"),
 ]
 
+ENVIRONMENT_MODELS = [
+    Path("Unity/Assets/Resources/EnvironmentModels/conifer/fir_tree_01/fir_tree_01.fbx"),
+    Path("Unity/Assets/Resources/EnvironmentModels/conifer/pine_tree_01/pine_tree_01.fbx"),
+    Path("Unity/Assets/Resources/EnvironmentModels/rocks/rock_moss_set_01/rock_moss_set_01.fbx"),
+    Path("Unity/Assets/Resources/EnvironmentModels/cliffs/rock_face_02/rock_face_02.fbx"),
+    Path("Unity/Assets/Resources/EnvironmentModels/deadwood/dead_tree_trunk_02/dead_tree_trunk_02.fbx"),
+    Path("Unity/Assets/Resources/EnvironmentModels/groundcover/moss_01/moss_01.fbx"),
+]
+
 CODE_REQUIRED = [
     Path("Unity/Assets/Scripts/AshDarkFantasyPresentation.cs"),
     Path("Unity/Assets/Scripts/AshOpenWorld.cs"),
@@ -65,6 +74,14 @@ for relative in REQUIRED:
     else:
         print(f"OK {relative}: {size:,} bytes")
     total_bytes += size
+for relative in ENVIRONMENT_MODELS:
+    path = ROOT / relative
+    if not path.is_file() or path.stat().st_size < 1024:
+        missing.append(f"{relative} (missing or unexpectedly small)")
+        continue
+    total_bytes += path.stat().st_size
+    print(f"OK environment model {relative}: {path.stat().st_size:,} bytes")
+
 for relative in CODE_REQUIRED:
     path = ROOT / relative
     if not path.is_file() or path.stat().st_size < 100:
@@ -92,4 +109,4 @@ if missing:
     for item in missing:
         print(f" - {item}", file=sys.stderr)
     sys.exit(1)
-print(f"\nResource preflight passed: {len(REQUIRED)} required assets, {len(CODE_REQUIRED)} required code/config files, {pbr_count} verified <=2K PBR maps, {total_bytes:,} bytes asset data.")
+print(f"\nResource preflight passed: {len(REQUIRED)} required textures/artwork, {len(ENVIRONMENT_MODELS)} required environment FBX models, {len(CODE_REQUIRED)} required code/config files, {pbr_count} verified <=2K PBR maps, {total_bytes:,} bytes asset data.")
