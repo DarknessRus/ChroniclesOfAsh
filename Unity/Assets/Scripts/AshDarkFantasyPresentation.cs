@@ -3,7 +3,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 /// <summary>
-/// Mobile dark-fantasy presentation layer: URP grading, restrained bloom/vignette,
+/// Mobile dark-fantasy presentation layer: balanced brighter lighting, restrained bloom/vignette,
 /// warm torch pools, cold fill light, drifting embers and a reusable spell burst.
 /// No third-party package assets are required; all effects are generated in code.
 /// </summary>
@@ -24,8 +24,6 @@ public static class AshDarkFantasyPresentation
         BuildGothicRuins(root);
     }
 
-    // The game creates its follow camera after constructing the world. Call this once
-    // that camera exists so the volume is actually enabled on the gameplay camera.
     public static void ConfigureCamera(Camera cam)
     {
         if (cam == null) return;
@@ -36,14 +34,15 @@ public static class AshDarkFantasyPresentation
     static void SetupLighting()
     {
         RenderSettings.ambientMode = AmbientMode.Trilight;
-        RenderSettings.ambientSkyColor = new Color(.12f, .15f, .20f);
-        RenderSettings.ambientEquatorColor = new Color(.045f, .052f, .07f);
-        RenderSettings.ambientGroundColor = new Color(.012f, .015f, .022f);
-        RenderSettings.ambientIntensity = .72f;
+        // Lift shadow detail so terrain, trees and the hero remain readable on phone screens.
+        RenderSettings.ambientSkyColor = new Color(.30f, .34f, .41f);
+        RenderSettings.ambientEquatorColor = new Color(.19f, .21f, .24f);
+        RenderSettings.ambientGroundColor = new Color(.075f, .078f, .085f);
+        RenderSettings.ambientIntensity = 1.15f;
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.ExponentialSquared;
-        RenderSettings.fogColor = new Color(.055f, .075f, .10f);
-        RenderSettings.fogDensity = .0032f;
+        RenderSettings.fogColor = new Color(.12f, .15f, .19f);
+        RenderSettings.fogDensity = .0022f;
 
         Light key = RenderSettings.sun;
         foreach (Light candidate in Object.FindObjectsOfType<Light>())
@@ -55,10 +54,10 @@ public static class AshDarkFantasyPresentation
             key.type = LightType.Directional;
             go.transform.rotation = Quaternion.Euler(37f, -28f, 0f);
         }
-        key.color = new Color(.48f, .58f, .78f);
-        key.intensity = 0.72f;
+        key.color = new Color(.78f, .83f, .94f);
+        key.intensity = 1.15f;
         key.shadows = LightShadows.Soft;
-        key.shadowStrength = .78f;
+        key.shadowStrength = .62f;
         key.renderMode = LightRenderMode.Auto;
     }
 
@@ -82,7 +81,6 @@ public static class AshDarkFantasyPresentation
             additional.antialiasing = AntialiasingMode.FastApproximateAntialiasing;
         }
 
-        // Create the global volume even if the camera is created later by the bootstrap.
         if (volume != null) return;
         var go = new GameObject("Ash - Global Volume - Ashen Dread");
         Object.DontDestroyOnLoad(go);
@@ -95,28 +93,29 @@ public static class AshDarkFantasyPresentation
         var bloom = volume.profile.Add<Bloom>(true);
         bloom.active = true;
         bloom.threshold.Override(1.1f);
-        bloom.intensity.Override(.45f);
+        bloom.intensity.Override(.5f);
         bloom.scatter.Override(.65f);
         bloom.highQualityFiltering.Override(false);
 
         var vignette = volume.profile.Add<Vignette>(true);
         vignette.active = true;
-        vignette.color.Override(new Color(.006f, .008f, .014f));
-        vignette.intensity.Override(.28f);
+        vignette.color.Override(new Color(.012f, .016f, .025f));
+        vignette.intensity.Override(.16f);
         vignette.smoothness.Override(.55f);
         vignette.rounded.Override(true);
 
         var color = volume.profile.Add<ColorAdjustments>(true);
         color.active = true;
-        color.postExposure.Override(-.3f);
-        color.contrast.Override(20f);
-        color.saturation.Override(-18f);
-        color.colorFilter.Override(new Color(.78f, .83f, .92f));
+        // Positive exposure and gentler contrast brighten dark surfaces without washing out highlights.
+        color.postExposure.Override(.25f);
+        color.contrast.Override(8f);
+        color.saturation.Override(-8f);
+        color.colorFilter.Override(new Color(.91f, .94f, 1f));
 
         var balance = volume.profile.Add<WhiteBalance>(true);
         balance.active = true;
-        balance.temperature.Override(-8f);
-        balance.tint.Override(3f);
+        balance.temperature.Override(-3f);
+        balance.tint.Override(1f);
 
         var tone = volume.profile.Add<Tonemapping>(true);
         tone.active = true;
@@ -125,7 +124,7 @@ public static class AshDarkFantasyPresentation
         var grain = volume.profile.Add<FilmGrain>(true);
         grain.active = true;
         grain.type.Override(FilmGrainLookup.Thin1);
-        grain.intensity.Override(.09f);
+        grain.intensity.Override(.045f);
         grain.response.Override(.75f);
     }
 
@@ -192,7 +191,6 @@ public static class AshDarkFantasyPresentation
         if (stoneMaterial.HasProperty("_Smoothness")) stoneMaterial.SetFloat("_Smoothness", .22f);
         if (stoneMaterial.HasProperty("_Glossiness")) stoneMaterial.SetFloat("_Glossiness", .22f);
 
-        // Ruined pillars flank the route; they do not cover the spawn point or walkable valley.
         for (int i = 0; i < 8; i++)
         {
             float z = -15f + i * 24f;
@@ -204,11 +202,9 @@ public static class AshDarkFantasyPresentation
             pillar.transform.position = position;
             pillar.transform.localScale = new Vector3(.8f, 2.5f + (i % 3) * .35f, .8f);
             pillar.GetComponent<Renderer>().sharedMaterial = stoneMaterial;
-            // Keep primitive colliders: the player cannot pass through the stone.
             if (i % 2 == 0) AddTorch(root, position + new Vector3(side * .9f, 2.3f, 0f), i);
         }
 
-        // A low, broken arch silhouette is placed farther down the trail.
         Vector3 archCenter = new Vector3(0f, 0f, 105f);
         CreateStoneBlock(root, "Ash Gothic - arch left pier", archCenter + new Vector3(-4.1f, 2.2f, 0f), new Vector3(1.05f, 4.4f, 1.1f));
         CreateStoneBlock(root, "Ash Gothic - arch right pier", archCenter + new Vector3(4.1f, 2.2f, 0f), new Vector3(1.05f, 4.4f, 1.1f));
@@ -225,7 +221,6 @@ public static class AshDarkFantasyPresentation
         block.transform.position = position;
         block.transform.localScale = scale;
         block.GetComponent<Renderer>().sharedMaterial = stoneMaterial;
-        // BoxCollider is deliberately retained for collision.
     }
 
     static void AddTorch(Transform root, Vector3 position, int index)
@@ -251,7 +246,6 @@ public static class AshDarkFantasyPresentation
         flame.GetComponent<Renderer>().sharedMaterial = glowMaterial;
     }
 
-    /// <summary>Attaches a low-cost spectral aura to the hero for a persistent status-effect look.</summary>
     public static void AttachHeroAura(Transform target)
     {
         if (target == null || target.Find("Ash VFX - spectral hero aura") != null) return;
@@ -281,7 +275,6 @@ public static class AshDarkFantasyPresentation
         ps.Play();
     }
 
-    /// <summary>Creates a short-lived dark-magic burst at a world position.</summary>
     public static ParticleSystem SpawnDarkSpell(Vector3 position, Transform parent = null)
     {
         var go = new GameObject("Ash VFX - dark spell burst");
