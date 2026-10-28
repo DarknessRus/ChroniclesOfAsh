@@ -1,4 +1,4 @@
-name: Prepare CC0 environment assets # mobile-safe model set
+name: Prepare CC0 environment assets # trim duplicate texture formats
 
 on:
   push:
