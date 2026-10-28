@@ -67,10 +67,8 @@ public sealed class AshWorldMotion : MonoBehaviour
         ReparentNamedParts(head, "Face", "Eye shadow", "Eye glint", "Hood crown",
             "Hood shadow", "Helmet crest", "Helmet horn", "Ranger hood mantle",
             "Necromancer bone charm");
-        ReparentNamedParts(leftArm, "Left armored arm", "Forearm bracer", "Left armored arm");
-        ReparentNamedParts(rightArm, "Right armored arm", "Forearm bracer", "Right armored arm");
-        ReparentNamedParts(leftLeg, "Left greave", "Left greave", "Boot", "Knee guard");
-        ReparentNamedParts(rightLeg, "Right greave", "Right greave", "Boot", "Knee guard");
+        // Keep left/right limb assignment in AttachMatching; some armor piece names
+        // (Boot, Knee guard and Forearm bracer) are intentionally shared by both sides.
         ReparentNamedParts(cloak, "Weathered cloak", "Cloak torn edge");
 
         // Name-based grouping above can include repeated generic names. Correctly sort
