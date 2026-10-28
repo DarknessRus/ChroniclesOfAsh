@@ -14,7 +14,7 @@ on:
       - '.github/workflows/build-unity-android.yml'
 jobs:
   build:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/endless-world-generation' || github.event_name == 'workflow_dispatch'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/endless-world-generation' || github.ref == 'refs/heads/feature/server-ai-world-generation' || github.event_name == 'workflow_dispatch'
     name: Unity Android build
     runs-on: ubuntu-latest
     timeout-minutes: 45
