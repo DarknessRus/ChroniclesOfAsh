@@ -59,12 +59,72 @@ function normalizeWorldEvent(raw) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   if (req.method === "GET" && url.pathname === "/health") return send(res, 200, { ok: true, service: "chronicles-of-ash-ai" });
-  if (req.method !== "POST" || url.pathname !== "/api/story") return send(res, 404, { error: "Not found" });
+  if (req.method !== "POST" || !["/api/story", "/api/world/segment"].includes(url.pathname)) return send(res, 404, { error: "Not found" });
   const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").toString().split(",")[0].trim();
   if (!rateAllowed(ip)) return send(res, 429, { error: "Слишком много запросов. Подожди минуту." });
   if (!API_KEY || !MODEL) return send(res, 503, { error: "ИИ-сервер ещё не настроен: добавь AI_API_KEY и AI_MODEL в переменные окружения." });
   try {
     const input = await readJson(req);
+    if (url.pathname === "/api/world/segment") {
+      const allowedBiomes = ["ashen_forest", "frozen_ruins", "crystal_wastes", "volcanic_rift"];
+      const allowedEnemies = ["ash_wraith", "bone_hound", "rift_stalker", "grave_knight", "crystal_sentinel"];
+      const chunkIndex = Math.max(0, Math.min(1_000_000, Math.floor(Number(input.chunkIndex) || 0)));
+      const seed = Math.max(0, Math.min(2_147_483_647, Math.floor(Number(input.seed) || 7319)));
+      const playerLevel = Math.max(1, Math.min(100, Math.floor(Number(input.playerLevel) || 1)));
+      const previousBiomes = Array.isArray(input.previousBiomes)
+        ? input.previousBiomes.filter(x => allowedBiomes.includes(x)).slice(-4)
+        : [];
+      const worldPrompt = [
+        "You are the live world director for the original mobile dark-fantasy ARPG Chronicles of Ash.",
+        "Create a compact gameplay plan for one 48-meter procedural world segment. Return only JSON.",
+        "Pick one supported biome and enemy archetype; vary the result and avoid repeating recent biomes when possible.",
+        "Do not invent asset filenames or code. Unity will construct geometry from existing primitives and materials.",
+        "Keep difficulty fair for a mobile game. Enemy count 1-5; health multiplier 0.7-2.5; speed multiplier 0.7-1.6; loot tier 1-5.",
+        "Supported biome IDs: ashen_forest, frozen_ruins, crystal_wastes, volcanic_rift.",
+        "Supported enemy IDs: ash_wraith, bone_hound, rift_stalker, grave_knight, crystal_sentinel.",
+        "JSON fields: biome, enemyType, enemyCount, enemyHealthMultiplier, enemySpeedMultiplier, lootTier, description.",
+        "All descriptive text must be in Russian and no longer than 180 characters.",
+        "Input: " + JSON.stringify({ chunkIndex, seed, playerLevel, previousBiomes })
+      ].join("\n");
+      const worldUpstream = await fetch(API_URL, {
+        method: "POST",
+        headers: { "authorization": "Bearer " + API_KEY, "content-type": "application/json", "accept": "application/json" },
+        body: JSON.stringify({
+          model: MODEL, temperature: 0.9, max_tokens: 350,
+          messages: [
+            { role: "system", content: "Return only valid JSON, without Markdown fences." },
+            { role: "user", content: worldPrompt }
+          ],
+          response_format: { type: "json_object" }
+        }),
+        signal: AbortSignal.timeout(20_000)
+      });
+      const worldData = await worldUpstream.json().catch(() => ({}));
+      if (!worldUpstream.ok) {
+        console.error("World AI provider returned", worldUpstream.status, JSON.stringify(worldData).slice(0, 600));
+        return send(res, 502, { error: "ИИ не смог спланировать участок мира." });
+      }
+      const worldContent = worldData.choices?.[0]?.message?.content;
+      if (typeof worldContent !== "string") throw new Error("Provider response has no world profile");
+      const raw = JSON.parse(worldContent.replace(/^\\s*```(?:json)?/i, "").replace(/```\\s*$/, "").trim());
+      const numberInRange = (value, min, max, fallback) => {
+        const n = Number(value);
+        return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
+      };
+      const profile = {
+        chunkIndex,
+        seed,
+        biome: allowedBiomes.includes(raw.biome) ? raw.biome : "ashen_forest",
+        enemyType: allowedEnemies.includes(raw.enemyType) ? raw.enemyType : "ash_wraith",
+        enemyCount: Math.round(numberInRange(raw.enemyCount, 1, 5, 2)),
+        enemyHealthMultiplier: numberInRange(raw.enemyHealthMultiplier, 0.7, 2.5, 1),
+        enemySpeedMultiplier: numberInRange(raw.enemySpeedMultiplier, 0.7, 1.6, 1),
+        lootTier: Math.round(numberInRange(raw.lootTier, 1, 5, 1)),
+        description: cleanText(raw.description, 180) || "Пепел скрывает следы древнего сражения.",
+        source: "ai"
+      };
+      return send(res, 200, profile);
+    }
     const level = Math.max(1, Math.min(100, Number(input.level) || 1));
     const context = {
       level, class: cleanText(input.class, 30) || "warrior",
