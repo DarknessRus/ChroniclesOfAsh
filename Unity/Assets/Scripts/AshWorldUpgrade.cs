@@ -24,6 +24,55 @@ public static class AshWorldUpgrade
         return g;
     }
 
+    // Irregular closed rock mass: staggered rings create broken cliff silhouettes instead of cube faces.
+    static GameObject JaggedCliff(Transform root,string name,Vector3 position,Vector3 scale,Color color,Vector3 rotation)
+    {
+        const int sides=9, rings=4;
+        var go=new GameObject(name);
+        go.transform.SetParent(root,false);
+        go.transform.position=position;
+        go.transform.localScale=scale;
+        go.transform.rotation=Quaternion.Euler(rotation);
+        var vertices=new Vector3[rings*sides+2];
+        var uv=new Vector2[vertices.Length];
+        var triangles=new System.Collections.Generic.List<int>(sides*rings*6);
+        float[] heights={-.5f,-.12f,.22f,.43f};
+        float[] radii={.38f,.52f,.43f,.28f};
+        for(int ring=0;ring<rings;ring++)
+        for(int i=0;i<sides;i++)
+        {
+            float angle=(i/(float)sides)*Mathf.PI*2f;
+            float wobble=1f+.13f*Mathf.Sin(i*4.7f+ring*1.9f)+.07f*Mathf.Cos(i*2.3f+ring);
+            float y=heights[ring]+(ring==3? .10f*Mathf.Sin(i*2.1f):.035f*Mathf.Cos(i*3.4f+ring));
+            int id=ring*sides+i;
+            vertices[id]=new Vector3(Mathf.Cos(angle)*radii[ring]*wobble,y,Mathf.Sin(angle)*radii[ring]*wobble);
+            uv[id]=new Vector2(i/(float)sides,ring/(float)(rings-1));
+        }
+        int bottom=vertices.Length-2, top=vertices.Length-1;
+        vertices[bottom]=new Vector3(0,-.5f,0); vertices[top]=new Vector3(.03f,.49f,-.02f);
+        uv[bottom]=new Vector2(.5f,0); uv[top]=new Vector2(.5f,1);
+        for(int ring=0;ring<rings-1;ring++)
+        for(int i=0;i<sides;i++)
+        {
+            int a=ring*sides+i, b=ring*sides+(i+1)%sides, d=(ring+1)*sides+i, e=(ring+1)*sides+(i+1)%sides;
+            triangles.Add(a);triangles.Add(d);triangles.Add(b);
+            triangles.Add(b);triangles.Add(d);triangles.Add(e);
+        }
+        for(int i=0;i<sides;i++)
+        {
+            int next=(i+1)%sides;
+            triangles.Add(bottom);triangles.Add(next);triangles.Add(i);
+            int a=(rings-1)*sides+i,b=(rings-1)*sides+next;
+            triangles.Add(top);triangles.Add(a);triangles.Add(b);
+        }
+        var mesh=new Mesh{name=name+" procedural fractured mesh"};
+        mesh.vertices=vertices;mesh.uv=uv;mesh.triangles=triangles.ToArray();mesh.RecalculateNormals();mesh.RecalculateBounds();
+        go.AddComponent<MeshFilter>().sharedMesh=mesh;
+        go.AddComponent<MeshRenderer>().sharedMaterial=Mat(color,.86f);
+        var collider=go.AddComponent<MeshCollider>();collider.sharedMesh=mesh;
+        return go;
+    }
+
     static GameObject Spire(Transform root,Vector3 p,float height,Color color)
     {
         var g=new GameObject("Gothic spire");
@@ -102,12 +151,12 @@ public static class AshWorldUpgrade
             float z=-5+i*4.9f;
             float x=side*(24f+(i%3)*2.1f);
             float h=5f+(i%4)*2.8f;
-            Part(root,PrimitiveType.Cube,"Layered valley cliff",new Vector3(x,h*.48f,z),
-                new Vector3(5.5f,h,6.5f),i%3==0?new Color(.15f,.18f,.18f):stone,
+            JaggedCliff(root,"Layered valley cliff",new Vector3(x,h*.48f,z),
+                new Vector3(7.5f,h*1.35f,8.5f),i%3==0?new Color(.15f,.18f,.18f):stone,
                 new Vector3((i%2)*5f,side*(i*11f),side*(i%3==0?7f:-4f)));
             if(i%2==0)
-                Part(root,PrimitiveType.Cube,"Cliff ledge",new Vector3(x-side*1.2f,h*.83f,z),
-                    new Vector3(6.8f,.55f,7.1f),edge,new Vector3(0,side*i*9f,side*3f));
+                JaggedCliff(root,"Cliff ledge",new Vector3(x-side*1.2f,h*.83f,z),
+                    new Vector3(8.2f,1.15f,8.4f),edge,new Vector3(0,side*i*9f,side*3f));
         }
 
         // Stone parapets and orange lanterns along the approach.
