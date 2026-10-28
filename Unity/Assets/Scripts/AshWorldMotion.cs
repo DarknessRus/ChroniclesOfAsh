@@ -32,12 +32,12 @@ public sealed class AshWorldMotion : MonoBehaviour
             // Imported FBX exposes legacy Animation clips from the real skinned rig.
             // Search children because Unity may place the Animation component on the FBX root.
             heroAnimation = GetComponentInChildren<Animation>(true);
-            if (heroAnimation != null && FindClipContaining("Walking") != null && FindClipContaining("Running") != null)
+            if (heroAnimation != null && FindClipContaining("Walk") != null && FindClipContaining("Run") != null)
             {
                 externalRig = true;
                 idleClipName = FindClipContaining("Idle") != null ? FindClipContaining("Idle") : heroAnimation.clip.name;
-                walkClipName = FindClipContaining("Walking");
-                runClipName = FindClipContaining("Running");
+                walkClipName = FindClipContaining("Walk");
+                runClipName = FindClipContaining("Run");
                 heroAnimation.playAutomatically = false;
                 heroAnimation.wrapMode = WrapMode.Loop;
                 heroAnimation.Play(idleClipName);

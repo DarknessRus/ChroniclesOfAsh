@@ -1,103 +1,50 @@
 #!/usr/bin/env python3
-"""Download CC0 skinned character parts and external clips, then assemble a Unity FBX."""
+"""Fetch Quaternius's official CC0 animated knight pack and stage its skinned FBX for Unity."""
 from pathlib import Path
 from urllib.request import Request, urlopen
-import subprocess, sys
+import shutil, subprocess, sys, zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = "https://raw.githubusercontent.com/NoLimitNexus/game-models/main/"
-SRC = ROOT / "build/skeletal-hero-source"
+DOWNLOAD = ROOT / "build" / "quaternius-knight"
 OUT = ROOT / "Unity/Assets/Resources/Characters"
+DOWNLOAD.mkdir(parents=True, exist_ok=True)
 OUT.mkdir(parents=True, exist_ok=True)
-SRC.mkdir(parents=True, exist_ok=True)
-ASSETS = [
- "library/ours/body/Body.glb",
- "library/ours/parts/top_tunic.glb",
- "library/ours/parts/bottom_trousers.glb",
- "library/ours/parts/boots_tall.glb",
- "library/ours/parts/hair_tousled.glb",
- "library/animations/Rig_Medium_General.glb",
- "library/animations/Rig_Medium_MovementBasic.glb",
- "library/animations/Rig_Medium_MovementAdvanced.glb",
-]
-for relative in ASSETS:
-    dest = SRC / relative
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    request = Request(BASE + relative, headers={"User-Agent":"ChroniclesOfAsh-AssetBuilder/1.0"})
-    with urlopen(request, timeout=90) as response: data = response.read()
-    if len(data) < 1024 or not data.startswith(b"glTF"):
-        raise RuntimeError(f"Invalid GLB download: {relative} ({len(data)} bytes)")
-    dest.write_bytes(data)
-    print(f"Downloaded {relative}: {len(data):,} bytes", flush=True)
+FOLDER = "https://drive.google.com/drive/folders/1QVyfCJkq70mAwMIh1cGq1xfHp2LN5GmK?usp=sharing"
 
-blend = ROOT / "build/assemble_skeletal_hero.py"
-blend.parent.mkdir(parents=True, exist_ok=True)
-blend.write_text(r'''
-import bpy, sys
-from pathlib import Path
-args=sys.argv[sys.argv.index("--")+1:]
-source=Path(args[0]); output=Path(args[1])
-bpy.ops.object.select_all(action="SELECT"); bpy.ops.object.delete(use_global=False)
-def import_glb(rel):
-    before=set(bpy.data.objects); actions=set(bpy.data.actions)
-    bpy.ops.import_scene.gltf(filepath=str(source/rel))
-    return [o for o in bpy.data.objects if o not in before], [a for a in bpy.data.actions if a not in actions]
-base,_=import_glb("library/ours/body/Body.glb")
-rigs=[o for o in base if o.type=="ARMATURE"]
-if not rigs: raise RuntimeError("Body GLB has no armature; refusing unskinned output")
-rig=rigs[0]; rig.name="AshHero_Rig"; rig.data.name="AshHero_Skeleton"
-meshes=[o for o in base if o.type=="MESH"]
-for rel in ["library/ours/parts/top_tunic.glb","library/ours/parts/bottom_trousers.glb",
-            "library/ours/parts/boots_tall.glb","library/ours/parts/hair_tousled.glb"]:
-    objects,_=import_glb(rel)
-    for mesh in [o for o in objects if o.type=="MESH"]:
-        # All published kit pieces use the same 23-bone rig and vertex-group names.
-        for mod in list(mesh.modifiers):
-            if mod.type=="ARMATURE": mesh.modifiers.remove(mod)
-        mod=mesh.modifiers.new("AshHero_Skin","ARMATURE"); mod.object=rig
-        mod.use_vertex_groups=True; mod.use_bone_envelopes=False
-        mesh.parent=rig
-        meshes.append(mesh)
-    for old in [o for o in objects if o.type=="ARMATURE"]:
-        bpy.data.objects.remove(old,do_unlink=True)
-wanted=("Idle_A","Walking_A","Running_A"); found={}
-for rel in ["library/animations/Rig_Medium_General.glb",
-            "library/animations/Rig_Medium_MovementBasic.glb",
-            "library/animations/Rig_Medium_MovementAdvanced.glb"]:
-    objects,actions=import_glb(rel)
-    for action in actions:
-        for key in wanted:
-            if key.lower() in action.name.lower() and key not in found: found[key]=action
-    for obj in objects:
-        if obj.type=="ARMATURE": bpy.data.objects.remove(obj,do_unlink=True)
-missing=[x for x in wanted if x not in found]
-if missing: raise RuntimeError("Missing external animation clips: "+", ".join(missing))
-rig.animation_data_create(); rig.animation_data.action=None
-for name in wanted:
-    action=found[name]; track=rig.animation_data.nla_tracks.new(); track.name=name
-    strip=track.strips.new(name,int(action.frame_range[0]),action); strip.name=name
-    strip.action_frame_start=action.frame_range[0]; strip.action_frame_end=action.frame_range[1]
-    strip.blend_type="REPLACE"; strip.extrapolation="NOTHING"
-bpy.context.scene.unit_settings.system="METRIC"
-bpy.ops.object.select_all(action="DESELECT"); rig.select_set(True)
-for obj in meshes: obj.select_set(True)
-bpy.context.view_layer.objects.active=rig
-output.parent.mkdir(parents=True,exist_ok=True)
-bpy.ops.export_scene.fbx(filepath=str(output),use_selection=True,object_types={"ARMATURE","MESH"},
-    apply_scale_options="FBX_SCALE_ALL",add_leaf_bones=False,bake_anim=True,
-    bake_anim_use_nla_strips=True,bake_anim_use_all_actions=False,bake_anim_force_startend_keying=True,
-    bake_anim_simplify_factor=0.0,path_mode="COPY",embed_textures=True,axis_forward="-Z",axis_up="Y")
-if not output.exists() or output.stat().st_size<100000: raise RuntimeError("FBX output missing or too small")
-print("Skinned FBX exported:",output,output.stat().st_size,"bytes")
-''',encoding="utf-8")
-result=subprocess.run(["blender","-b","--factory-startup","--python",str(blend),"--",str(SRC),str(OUT/"AshHero.fbx")],
-                      cwd=str(ROOT),text=True,stdout=sys.stdout,stderr=sys.stderr)
-if result.returncode: raise SystemExit(result.returncode)
-(OUT/"ASSET_SOURCES.txt").write_text(
- "Chronicles of Ash external skinned hero\n"
- "Character body and outfit parts: NoLimitNexus/game-models, library/ours; source repository documents these meshes as original.\n"
- "External animation clips and skeleton: Kay Lousberg / KayKit, CC0, as documented in the source repository.\n"
- "Source repository: https://github.com/NoLimitNexus/game-models\n"
- "Animation source and license: https://quaternius.itch.io/universal-animation-library\n"
- "FBX is assembled during CI; expected clips: Idle_A, Walking_A, Running_A.\n",encoding="utf-8")
-print("External skinned character and clips prepared for Unity.")
+# This is the official download folder linked by Quaternius on the CC0 pack page.
+result = subprocess.run([sys.executable, "-m", "gdown", "--folder", FOLDER, "-O", str(DOWNLOAD)],
+                        text=True)
+if result.returncode:
+    raise SystemExit("Could not download the official Quaternius CC0 animated knight pack.")
+archives = list(DOWNLOAD.rglob("*.zip"))
+if not archives:
+    raise RuntimeError("Official download folder returned no ZIP archives.")
+extracted = DOWNLOAD / "extracted"
+extracted.mkdir(parents=True, exist_ok=True)
+for archive in archives:
+    with zipfile.ZipFile(archive) as z:
+        z.extractall(extracted)
+fbx_files = list(extracted.rglob("*.fbx"))
+if not fbx_files:
+    raise RuntimeError("Quaternius pack contained no FBX model/animation file.")
+ranked = sorted(fbx_files, key=lambda p: (
+    1 if "knight" in p.name.lower() and "character" in p.name.lower() else
+    1 if "knight" in p.name.lower() else 0, p.stat().st_size), reverse=True)
+source = ranked[0]
+if source.stat().st_size < 100_000:
+    raise RuntimeError(f"Selected FBX is implausibly small: {source} ({source.stat().st_size} bytes)")
+target = OUT / "AshHero.fbx"
+shutil.copy2(source, target)
+# The pack is explicitly marked CC0 on Quaternius's official page; retain the provenance.
+(OUT / "ASSET_SOURCES.txt").write_text(
+    "Chronicles of Ash external skinned hero\n"
+    "Asset: LowPoly Animated Knight / Animated Knight Pack by Quaternius.\n"
+    "Includes a skinned 3D character and authored Idle, Walk, Run and other animation clips.\n"
+    "License: CC0 1.0 Universal, confirmed on the official pack page.\n"
+    "Official source: https://quaternius.itch.io/lowpoly-animated-knight\n"
+    "Official pack page: https://quaternius.com/packs/knightcharacter.html\n"
+    "Original FBX copied to AshHero.fbx during CI; not procedurally fabricated.\n",
+    encoding="utf-8"
+)
+print(f"Staged real Quaternius skinned character: {target} ({target.stat().st_size:,} bytes)")
+print("FBX source:", source)

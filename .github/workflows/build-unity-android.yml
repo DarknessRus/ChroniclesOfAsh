@@ -21,10 +21,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Download CC0 environment models and companion maps
         run: python .github/scripts/download_environment_models.py
-      - name: Assemble a fully skinned hero and external CC0 animations
+      - name: Download official CC0 animated knight model
         run: |
-          sudo apt-get update
-          sudo apt-get install -y blender
+          python -m pip install "gdown==5.2.0"
           python tools/build_skeletal_hero.py
       - name: Download CC0 PBR texture maps
         run: python tools/download_pbr_textures.py
