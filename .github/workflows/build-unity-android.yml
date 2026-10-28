@@ -11,6 +11,7 @@ on:
     paths:
       - 'Unity/**'
       - 'tools/**'
+      - '.github/workflows/build-unity-android.yml'
 jobs:
   build:
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
@@ -43,9 +44,17 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          echo "Current runner worker limits:"
-          sudo prlimit --pid "$PPID" --nofile=65536:65536
-          sudo prlimit --pid "$PPID" --nofile
+          # The limit must be raised on the runner worker before the Unity action
+          # starts; changing only this short-lived shell does not affect its parent.
+          worker_pid="$(pgrep -f 'Runner.Worker' | head -n 1)"
+          if [ -z "$worker_pid" ]; then
+            echo "Could not locate GitHub Actions Runner.Worker process."
+            exit 1
+          fi
+          sudo prlimit --pid "$worker_pid" --nofile=1048576:1048576
+          sudo prlimit --pid "$worker_pid" --nofile
+          ulimit -n 1048576
+          ulimit -Sn
       - uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -65,7 +74,7 @@ jobs:
           mapfile -t apks < <(find build/Android -maxdepth 1 -type f -name '*.apk' -print)
           if [ "${#apks[@]}" -ne 1 ]; then
             echo "Expected exactly one APK, found ${#apks[@]}."
-            printf '%s\n' "${apks[@]}"
+            printf '%s\\n' "${apks[@]}"
             exit 1
           fi
           apk="${apks[0]}"
