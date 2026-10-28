@@ -54,10 +54,13 @@ public static class AshEnvironmentModelScatter
         // Existing procedural trees remain in use; imported high-detail models are
         // reserved for rocks, cliffs, fallen wood and ground cover to keep mobile meshes light.
 
+        // Put scanned assets in the opening camera view; previous placements were
+        // so far sideways that the downloaded meshes were almost invisible at spawn.
         Vector3[] rockPositions = {
-            new Vector3(-28,0,8), new Vector3(31,0,20), new Vector3(-37,0,39),
-            new Vector3(39,0,47), new Vector3(-30,0,69), new Vector3(35,0,78),
-            new Vector3(-44,0,102), new Vector3(43,0,108)
+            new Vector3(-3.2f,0,2.8f), new Vector3(3.4f,0,4.6f),
+            new Vector3(-4.8f,0,8.5f), new Vector3(5.1f,0,10.2f),
+            new Vector3(-28,0,18), new Vector3(31,0,25),
+            new Vector3(-37,0,42), new Vector3(39,0,49)
         };
         for (int i = 0; i < rockPositions.Length; i++)
         {
@@ -67,8 +70,8 @@ public static class AshEnvironmentModelScatter
         }
 
         Vector3[] cliffPositions = {
-            new Vector3(-100,0,8), new Vector3(105,0,43),
-            new Vector3(-112,0,82), new Vector3(115,0,113)
+            new Vector3(-10,0,14), new Vector3(11,0,17),
+            new Vector3(-100,0,28), new Vector3(105,0,53)
         };
         for (int i = 0; i < cliffPositions.Length; i++)
         {
@@ -78,8 +81,8 @@ public static class AshEnvironmentModelScatter
         }
 
         Vector3[] trunkPositions = {
-            new Vector3(-48,0,24), new Vector3(47,0,61),
-            new Vector3(-53,0,84), new Vector3(52,0,103)
+            new Vector3(-6.5f,0,7.5f), new Vector3(7.2f,0,11.5f),
+            new Vector3(-53,0,64), new Vector3(52,0,83)
         };
         for (int i = 0; i < trunkPositions.Length; i++)
         {
@@ -89,8 +92,9 @@ public static class AshEnvironmentModelScatter
         }
 
         Vector3[] mossPositions = {
-            new Vector3(-18,0,13), new Vector3(20,0,34), new Vector3(-24,0,56),
-            new Vector3(25,0,65), new Vector3(-20,0,88), new Vector3(22,0,99)
+            new Vector3(-2.1f,0,2.4f), new Vector3(2.3f,0,3.5f),
+            new Vector3(-4.2f,0,6.2f), new Vector3(4.4f,0,7.8f),
+            new Vector3(-20,0,48), new Vector3(22,0,59)
         };
         for (int i = 0; i < mossPositions.Length; i++)
         {
