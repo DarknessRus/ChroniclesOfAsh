@@ -27,6 +27,7 @@ public static class AshOpenWorld
         // later world styling cannot replace the ground/rock/bark materials.
         AshDarkFantasyPresentation.Apply(root);
         AshRealisticWorldVisuals.Apply(root);
+        AshGroundSafety.AlignSceneryToTerrain(root);
     }
 
     static void BuildTerrain(Transform root)
