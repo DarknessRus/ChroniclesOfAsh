@@ -247,7 +247,7 @@ public sealed class AshEndlessWorld : MonoBehaviour
             trunk.transform.rotation = Quaternion.Euler(0, (float)rng.NextDouble() * 360f, 0);
             trunk.transform.localScale = new Vector3(.20f * scale, 1.25f * scale, .20f * scale);
             trunk.GetComponent<Renderer>().sharedMaterial = barkMat;
-            var crown = GameObject.CreatePrimitive(PrimitiveType.Cone);
+            var crown = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             crown.name = "Ash pine crown";
             crown.transform.SetParent(parent, false);
             crown.transform.position = new Vector3(x, y + 2.8f * scale, z);
