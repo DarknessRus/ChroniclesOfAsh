@@ -161,13 +161,21 @@ public static class AshArtExpansion
         {
             float angle = i * 2.399f;
             float radius = 10f + (i % 5) * 3.3f;
-            Vector3 p = new Vector3(Mathf.Cos(angle) * radius, .12f, Mathf.Sin(angle) * radius + 8f);
+            float rockX = Mathf.Cos(angle) * radius;
+            float rockZ = Mathf.Sin(angle) * radius + 8f;
+            float rockY = AshGroundSafety.SampleGroundHeight(new Vector3(rockX, 0f, rockZ));
+            Vector3 p = new Vector3(rockX, rockY, rockZ);
+            Vector3 rockScale = new Vector3(.7f + (i % 3) * .35f, .4f + (i % 4) * .15f, .65f);
+            p.y += rockScale.y * .43f;
             Part(root, PrimitiveType.Sphere, "Ash-covered boulder", p,
-                new Vector3(.7f + (i % 3) * .35f, .4f + (i % 4) * .15f, .65f),
+                rockScale,
                 i % 3 == 0 ? moss : stone, new Vector3(i * 11f, i * 27f, i * 9f));
             if (i % 4 == 0)
             {
-                Part(root, PrimitiveType.Cylinder, "Fallen dead trunk", p + new Vector3(1.2f, .25f, .6f),
+                float trunkX = rockX + 1.2f;
+                float trunkZ = rockZ + .6f;
+                float trunkY = AshGroundSafety.SampleGroundHeight(new Vector3(trunkX, 0f, trunkZ)) + .95f;
+                Part(root, PrimitiveType.Cylinder, "Fallen dead trunk", new Vector3(trunkX, trunkY, trunkZ),
                     new Vector3(.22f, 1.9f, .22f), new Color(.19f, .13f, .105f), new Vector3(0, 0, 66f));
             }
         }
