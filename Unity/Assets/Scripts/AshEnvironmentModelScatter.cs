@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Adds imported CC0 environment meshes on top of the existing procedural valley.
@@ -116,7 +117,33 @@ public static class AshEnvironmentModelScatter
                 new Vector3(p.x, GroundY(p.x,p.z), p.z), .45f + (i % 3) * .12f, i * 53f);
         }
 
+        AddSourceCredit();
         Debug.Log("[Ash Chronicles] Imported CC0 environment assets placed and grounded: " +
             "12 trees, 8 mossy rock clusters, 4 cliff rocks, 4 fallen trunks and 6 moss clumps.");
+    }
+}
+
+    static void AddSourceCredit()
+    {
+        var canvasObject = new GameObject("Environment asset source credit");
+        var canvas = canvasObject.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvasObject.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        canvasObject.AddComponent<GraphicRaycaster>();
+
+        var labelObject = new GameObject("Poly Haven CC0 credit");
+        labelObject.transform.SetParent(canvasObject.transform, false);
+        var label = labelObject.AddComponent<Text>();
+        label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        label.fontSize = 13;
+        label.color = new Color(.78f, .80f, .79f, .82f);
+        label.alignment = TextAnchor.LowerLeft;
+        label.text = "Environment assets: Poly Haven (CC0)";
+        var rect = label.rectTransform;
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.zero;
+        rect.pivot = Vector2.zero;
+        rect.anchoredPosition = new Vector2(14f, 12f);
+        rect.sizeDelta = new Vector2(320f, 22f);
     }
 }
