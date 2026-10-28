@@ -13,6 +13,7 @@ on:
       - '.github/workflows/build-unity-android.yml'
 jobs:
   build:
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     name: Unity Android build
     runs-on: ubuntu-latest
     timeout-minutes: 45
