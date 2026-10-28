@@ -30,8 +30,6 @@ REQUIRED = [
 ]
 
 ENVIRONMENT_MODELS = [
-    Path("Unity/Assets/Resources/EnvironmentModels/conifer/fir_tree_01/fir_tree_01.fbx"),
-    Path("Unity/Assets/Resources/EnvironmentModels/conifer/pine_tree_01/pine_tree_01.fbx"),
     Path("Unity/Assets/Resources/EnvironmentModels/rocks/rock_moss_set_01/rock_moss_set_01.fbx"),
     Path("Unity/Assets/Resources/EnvironmentModels/cliffs/rock_face_02/rock_face_02.fbx"),
     Path("Unity/Assets/Resources/EnvironmentModels/deadwood/dead_tree_trunk_02/dead_tree_trunk_02.fbx"),
