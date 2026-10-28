@@ -332,8 +332,8 @@ public sealed class AshEndlessEnemyAI : MonoBehaviour
     {
         if (player == null)
         {
-            var p = FindObjectOfType<AshPlayerController>();
-            if (p != null) player = p.transform;
+            var playerController = FindObjectOfType<AshPlayerController>();
+            if (playerController != null) player = playerController.transform;
             if (player == null) return;
         }
         Vector3 toPlayer = player.position - transform.position;
