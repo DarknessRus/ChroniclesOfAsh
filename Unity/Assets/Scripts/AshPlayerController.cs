@@ -3,7 +3,8 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))]
 public class AshPlayerController : MonoBehaviour
 {
-    public float moveSpeed = 4.2f;
+    public float walkSpeed = 2.4f;
+    public float runSpeed = 4.2f;
     public float gravity = -18f;
 
     CharacterController cc;
@@ -43,7 +44,10 @@ public class AshPlayerController : MonoBehaviour
         if (move.sqrMagnitude > 0.01f)
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(move), 12f * Time.deltaTime);
 
-        cc.Move(move * moveSpeed * Time.deltaTime);
+        // Analog joystick tilt selects a walk at low input and a run when pushed far.
+        // Keyboard/digital input remains full-speed for convenient desktop testing.
+        float currentSpeed = input.magnitude >= 0.78f ? runSpeed : walkSpeed;
+        cc.Move(move * currentSpeed * Time.deltaTime);
 
         if (cc.isGrounded && velocity.y < 0f) velocity.y = -2f;
         velocity.y += gravity * Time.deltaTime;
