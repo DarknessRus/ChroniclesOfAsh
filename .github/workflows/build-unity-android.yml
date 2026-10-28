@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Download CC0 environment models and companion maps
+        run: python .github/scripts/download_environment_models.py
       - name: Download CC0 PBR texture maps
         run: python tools/download_pbr_textures.py
       - name: Generate pixel-based hero contour textures
