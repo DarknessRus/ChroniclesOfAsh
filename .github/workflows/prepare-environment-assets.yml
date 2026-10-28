@@ -1,4 +1,4 @@
-name: Prepare CC0 environment assets # retry with direct FBX downloads
+name: Prepare CC0 environment assets # mobile-safe model set
 
 on:
   push:
