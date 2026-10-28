@@ -85,7 +85,7 @@ const server = http.createServer(async (req, res) => {
         "JSON fields: biome, enemyType, enemyCount, enemyHealthMultiplier, enemySpeedMultiplier, lootTier, description.",
         "All descriptive text must be in Russian and no longer than 180 characters.",
         "Input: " + JSON.stringify({ chunkIndex, seed, playerLevel, previousBiomes })
-      ].join("\\n");
+      ].join("\n");
       const worldUpstream = await fetch(API_URL, {
         method: "POST",
         headers: { "authorization": "Bearer " + API_KEY, "content-type": "application/json", "accept": "application/json" },
