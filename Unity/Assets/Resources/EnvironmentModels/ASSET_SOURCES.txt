@@ -1,0 +1,5 @@
+Chronicles of Ash environment models
+Source: Poly Haven official public API (https://api.polyhaven.com/)
+License: CC0 1.0 Universal. The API requires a clear Poly Haven credit in the product.
+Assets: rock_moss_set_01, rock_face_02, dead_tree_trunk_02, moss_01
+Asset pages: https://polyhaven.com/a/rock_moss_set_01 ; https://polyhaven.com/a/rock_face_02 ; https://polyhaven.com/a/dead_tree_trunk_02 ; https://polyhaven.com/a/moss_01

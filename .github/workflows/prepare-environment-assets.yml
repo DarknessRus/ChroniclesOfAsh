@@ -1,0 +1,47 @@
+name: Prepare CC0 environment assets # trim duplicate texture formats
+
+on:
+  push:
+    branches:
+      - environment-assets-prep
+    paths:
+      - '.github/workflows/prepare-environment-assets.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  download-and-save:
+    if: github.ref == 'refs/heads/environment-assets-prep'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout environment-prep branch
+        uses: actions/checkout@v4
+        with:
+          ref: environment-assets-prep
+          persist-credentials: true
+      - name: Download and validate CC0 environment models
+        run: python .github/scripts/download_environment_models.py
+      - name: Review downloaded model files and sizes
+        shell: bash
+        run: |
+          set -euo pipefail
+          find Unity/Assets/Resources/EnvironmentModels -type f -printf '%s %p\n' | sort -nr
+          total=$(du -sb Unity/Assets/Resources/EnvironmentModels | cut -f1)
+          echo "Total environment asset bytes: $total"
+          test "$total" -gt 1024
+      - name: Commit downloaded resources to the prep branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Unity/Assets/Resources/EnvironmentModels
+          if git diff --cached --quiet; then
+            echo "No new environment assets to commit."
+            exit 0
+          fi
+          git commit -m "Add downloaded CC0 environment models"
+          git push origin HEAD:environment-assets-prep

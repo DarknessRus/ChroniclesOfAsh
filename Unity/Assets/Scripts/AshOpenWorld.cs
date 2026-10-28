@@ -20,6 +20,7 @@ public static class AshOpenWorld
         BuildMountainRanges(root);
         BuildRockFields(root);
         BuildForests(root);
+        AshEnvironmentModelScatter.Build(root);
         BuildTrail(root);
         AshReferenceLandscapeDetails.Build(root);
         // Apply the presentation layer first, then assign scanned PBR surfaces last so
