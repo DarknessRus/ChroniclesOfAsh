@@ -65,6 +65,17 @@ jobs:
           buildName: ChroniclesOfAsh
           buildsPath: build
           allowDirtyBuild: true
+      - name: Verify imported KnightCharacter rig and animation clips
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="build/KnightCharacter-verification.txt"
+          if [ ! -f "$report" ]; then
+            echo "Unity did not produce $report while importing AshHero.fbx."
+            exit 1
+          fi
+          cat "$report"
+          grep -Fxq "Result: PASS" "$report" || (echo "KnightCharacter FBX import verification failed." && exit 1)
       - name: Verify APK was rebuilt and has a plausible size
         shell: bash
         run: |
@@ -87,5 +98,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ChroniclesOfAsh-Unity-APK
-          path: build/Android/*.apk
+          path: |
+            build/Android/*.apk
+            build/KnightCharacter-verification.txt
           if-no-files-found: error
