@@ -15,7 +15,7 @@ public sealed class AshWorldMotion : MonoBehaviour
     Renderer waterRenderer;
     Vector2 waterOffset;
 
-    void Awake()
+    void Start()
     {
         if (kind == MotionKind.Hero)
         {
