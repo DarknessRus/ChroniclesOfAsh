@@ -56,6 +56,7 @@ for rel in ["library/ours/parts/top_tunic.glb","library/ours/parts/bottom_trouse
         mod=mesh.modifiers.new("AshHero_Skin","ARMATURE"); mod.object=rig
         mod.use_vertex_groups=True; mod.use_bone_envelopes=False
         mesh.parent=rig
+        meshes.append(mesh)
     for old in [o for o in objects if o.type=="ARMATURE"]:
         bpy.data.objects.remove(old,do_unlink=True)
 wanted=("Idle_A","Walking_A","Running_A"); found={}
