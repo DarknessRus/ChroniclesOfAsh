@@ -155,6 +155,8 @@ public static class AshOpenWorld
         m.vertices = vertices; m.triangles = triangles; m.RecalculateNormals();
         go.AddComponent<MeshFilter>().sharedMesh = m;
         go.AddComponent<MeshRenderer>().sharedMaterial = AshMaterials.Create(new Color(.035f,.15f,.20f,.92f), .82f);
+        var waterMotion = go.AddComponent<AshWorldMotion>();
+        waterMotion.kind = AshWorldMotion.MotionKind.Water;
         // Water remains a visual surface; the terrain collider beneath it stays walkable.
     }
 
@@ -299,6 +301,9 @@ public static class AshOpenWorld
             if (Mathf.Abs(x) < 7f && z > 5f && z < 36f) continue;
             var tree = new GameObject("Dark pine");
             tree.transform.SetParent(root, false);
+            var treeMotion = tree.AddComponent<AshWorldMotion>();
+            treeMotion.kind = AshWorldMotion.MotionKind.Tree;
+            treeMotion.phase = i * 0.37f;
             float groundY = AshGroundSafety.SampleGroundHeight(new Vector3(x, 0f, z));
             tree.transform.position = new Vector3(x, groundY, z);
             tree.transform.rotation = Quaternion.Euler(0, i * 37f, 0);
