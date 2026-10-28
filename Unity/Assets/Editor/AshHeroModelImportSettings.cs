@@ -11,7 +11,6 @@ public sealed class AshHeroModelImportSettings : AssetPostprocessor
         importer.importAnimation = true;
         importer.animationType = ModelImporterAnimationType.Legacy;
         importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-        importer.importMaterials = true;
         importer.materialImportMode = ModelImporterMaterialImportMode.ImportStandard;
         importer.meshCompression = ModelImporterMeshCompression.Medium;
         importer.isReadable = false;
