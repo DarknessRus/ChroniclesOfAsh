@@ -1,8 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// Lightweight, visible mobile motion for the procedural hero, tree crowns and river.
-/// Hero parts are animated by their authored names and offsets; no external Animator is required.
+/// Runtime skeletal animation for the current assembled hero, plus tree and river motion.
+/// The armor meshes are attached to named bone transforms and animated by looping clips.
+/// This avoids the previous per-part procedural offsets and works without external packages.
 /// </summary>
 public sealed class AshWorldMotion : MonoBehaviour
 {
@@ -10,31 +11,21 @@ public sealed class AshWorldMotion : MonoBehaviour
     public MotionKind kind;
     public float phase;
 
-    Transform[] movingParts;
-    Quaternion[] baseRotations;
-    Vector3[] basePositions;
+    CharacterController heroController;
+    Animation heroAnimation;
     MeshFilter waterFilter;
     Vector2[] originalUV;
     Mesh waterMesh;
     Renderer waterRenderer;
     Vector2 waterOffset;
-    CharacterController heroController;
+    string activeClip = "";
 
     void Start()
     {
         if (kind == MotionKind.Hero)
         {
             heroController = GetComponent<CharacterController>();
-            // Traverse the complete hierarchy so grouped or nested parts animate too.
-            movingParts = GetComponentsInChildren<Transform>(true);
-            baseRotations = new Quaternion[movingParts.Length];
-            basePositions = new Vector3[movingParts.Length];
-            for (int i = 0; i < movingParts.Length; i++)
-            {
-                baseRotations[i] = movingParts[i].localRotation;
-                basePositions[i] = movingParts[i].localPosition;
-            }
-            Debug.Log("[Ash Chronicles] Hero animation initialized for " + movingParts.Length + " transforms.");
+            BuildSkeletalRigAndClips();
         }
         else if (kind == MotionKind.Water)
         {
@@ -46,6 +37,166 @@ public sealed class AshWorldMotion : MonoBehaviour
                 originalUV = waterMesh.uv;
             }
         }
+    }
+
+    void BuildSkeletalRigAndClips()
+    {
+        // The prototype hero is assembled from armor pieces. Convert those pieces into
+        // a named bone hierarchy so motion comes from joint rotations, not moving each
+        // mesh independently as the previous implementation did.
+        Transform oldRig = transform.Find("Skeleton");
+        if (oldRig != null) Destroy(oldRig.gameObject);
+
+        var skeletonObject = new GameObject("Skeleton");
+        Transform skeleton = skeletonObject.transform;
+        skeleton.SetParent(transform, false);
+        skeleton.localPosition = Vector3.zero;
+        skeleton.localRotation = Quaternion.identity;
+        skeleton.localScale = Vector3.one;
+
+        Transform torso = MakeBone(skeleton, "Spine", new Vector3(0f, .08f, 0f));
+        Transform head = MakeBone(skeleton, "Head", new Vector3(0f, .62f, .02f));
+        Transform leftArm = MakeBone(skeleton, "LeftArm", new Vector3(-.38f, .34f, 0f));
+        Transform rightArm = MakeBone(skeleton, "RightArm", new Vector3(.38f, .34f, 0f));
+        Transform leftLeg = MakeBone(skeleton, "LeftLeg", new Vector3(-.16f, -.36f, 0f));
+        Transform rightLeg = MakeBone(skeleton, "RightLeg", new Vector3(.16f, -.36f, 0f));
+        Transform cloak = MakeBone(skeleton, "Cloak", new Vector3(0f, .05f, -.22f));
+
+        ReparentNamedParts(torso, "Armored torso", "Chest plate", "Chest crest",
+            "Crossed leather strap", "Waist belt", "Belt buckle");
+        ReparentNamedParts(head, "Face", "Eye shadow", "Eye glint", "Hood crown",
+            "Hood shadow", "Helmet crest", "Helmet horn", "Ranger hood mantle",
+            "Necromancer bone charm");
+        ReparentNamedParts(leftArm, "Left armored arm", "Forearm bracer", "Left armored arm");
+        ReparentNamedParts(rightArm, "Right armored arm", "Forearm bracer", "Right armored arm");
+        ReparentNamedParts(leftLeg, "Left greave", "Left greave", "Boot", "Knee guard");
+        ReparentNamedParts(rightLeg, "Right greave", "Right greave", "Boot", "Knee guard");
+        ReparentNamedParts(cloak, "Weathered cloak", "Cloak torn edge");
+
+        // Name-based grouping above can include repeated generic names. Correctly sort
+        // all remaining arm/leg/shoulder pieces by their original left/right names.
+        AttachMatching(skeleton, leftArm, rightArm, leftLeg, rightLeg, cloak, torso, head);
+
+        heroAnimation = GetComponent<Animation>();
+        if (heroAnimation == null) heroAnimation = gameObject.AddComponent<Animation>();
+        heroAnimation.playAutomatically = false;
+        heroAnimation.wrapMode = WrapMode.Loop;
+
+        AnimationClip idle = MakeClip("Idle", 2f, 0f);
+        AnimationClip walk = MakeClip("Walk", 1.0f, 28f);
+        AnimationClip run = MakeClip("Run", .62f, 48f);
+        heroAnimation.AddClip(idle, "Idle");
+        heroAnimation.AddClip(walk, "Walk");
+        heroAnimation.AddClip(run, "Run");
+        heroAnimation.clip = idle;
+        heroAnimation.Play("Idle");
+        activeClip = "Idle";
+
+        Debug.Log("[Ash Chronicles] Skeletal rig ready: 7 named bones; Idle, Walk and Run animation clips created.");
+    }
+
+    Transform MakeBone(Transform parent, string boneName, Vector3 localPosition)
+    {
+        var go = new GameObject(boneName);
+        Transform bone = go.transform;
+        bone.SetParent(parent, false);
+        bone.localPosition = localPosition;
+        bone.localRotation = Quaternion.identity;
+        return bone;
+    }
+
+    void ReparentNamedParts(Transform bone, params string[] exactNames)
+    {
+        // Move direct children with matching names under a joint, preserving their
+        // current world transforms so the armor silhouette does not jump at startup.
+        Transform[] parts = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < parts.Length; i++)
+        {
+            Transform part = parts[i];
+            if (part == transform || part == bone || part.IsChildOf(bone) ||
+                part.name == "Skeleton" || part.name == "Spine" || part.name == "Head" ||
+                part.name == "LeftArm" || part.name == "RightArm" || part.name == "LeftLeg" ||
+                part.name == "RightLeg" || part.name == "Cloak")
+                continue;
+            bool match = false;
+            for (int n = 0; n < exactNames.Length; n++)
+                if (part.name == exactNames[n]) { match = true; break; }
+            if (match && part.parent == transform)
+                part.SetParent(bone, true);
+        }
+    }
+
+    void AttachMatching(Transform skeleton, Transform leftArm, Transform rightArm,
+        Transform leftLeg, Transform rightLeg, Transform cloak, Transform torso, Transform head)
+    {
+        // Any pieces not picked up by exact-name groups are attached according to their
+        // authored side/name. This includes pauldrons, boots and torn cloak panels.
+        Transform[] parts = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < parts.Length; i++)
+        {
+            Transform p = parts[i];
+            if (p == transform || p == skeleton || p == leftArm || p == rightArm ||
+                p == leftLeg || p == rightLeg || p == cloak || p == torso || p == head ||
+                p.IsChildOf(skeleton) || p.parent != transform) continue;
+            string n = p.name.ToLowerInvariant();
+            if (n.Contains("armored arm") || n.Contains("forearm bracer") ||
+                n.Contains("shoulder pauldron"))
+                p.SetParent(n.Contains("left") || p.localPosition.x < 0f ? leftArm : rightArm, true);
+            else if (n.Contains("greave") || n.Contains("boot") || n.Contains("knee guard"))
+                p.SetParent(n.Contains("left") || p.localPosition.x < 0f ? leftLeg : rightLeg, true);
+            else if (n.Contains("cloak") || n.Contains("torn edge"))
+                p.SetParent(cloak, true);
+            else if (n.Contains("face") || n.Contains("eye") || n.Contains("hood") || n.Contains("helmet"))
+                p.SetParent(head, true);
+            else
+                p.SetParent(torso, true);
+        }
+    }
+
+    AnimationClip MakeClip(string clipName, float duration, float strideDegrees)
+    {
+        var clip = new AnimationClip();
+        clip.name = clipName;
+        clip.legacy = true;
+        clip.frameRate = 30f;
+        clip.wrapMode = WrapMode.Loop;
+        string[] bones = { "LeftArm", "RightArm", "LeftLeg", "RightLeg" };
+        for (int i = 0; i < bones.Length; i++)
+        {
+            float sign = (i == 0 || i == 3) ? 1f : -1f;
+            float amplitude = (i < 2) ? strideDegrees * .72f : strideDegrees;
+            string path = "Skeleton/" + bones[i];
+            clip.SetCurve(path, typeof(Transform), "localEulerAnglesRaw.x",
+                LoopingCurve(duration, amplitude * sign));
+        }
+        float torsoAmount = clipName == "Idle" ? 1.8f : clipName == "Walk" ? 2.5f : 4f;
+        clip.SetCurve("Skeleton/Spine", typeof(Transform), "localEulerAnglesRaw.z",
+            new AnimationCurve(
+                new Keyframe(0f, -torsoAmount), new Keyframe(duration * .25f, 0f),
+                new Keyframe(duration * .5f, torsoAmount), new Keyframe(duration * .75f, 0f),
+                new Keyframe(duration, -torsoAmount)));
+        float cloakAmount = clipName == "Idle" ? 1f : clipName == "Walk" ? 7f : 13f;
+        clip.SetCurve("Skeleton/Cloak", typeof(Transform), "localEulerAnglesRaw.x",
+            new AnimationCurve(
+                new Keyframe(0f, 0f), new Keyframe(duration * .25f, cloakAmount),
+                new Keyframe(duration * .5f, 0f), new Keyframe(duration * .75f, -cloakAmount),
+                new Keyframe(duration, 0f)));
+        float headAmount = clipName == "Idle" ? 1.5f : 0.8f;
+        clip.SetCurve("Skeleton/Head", typeof(Transform), "localEulerAnglesRaw.z",
+            new AnimationCurve(
+                new Keyframe(0f, -headAmount), new Keyframe(duration * .5f, headAmount),
+                new Keyframe(duration, -headAmount)));
+        return clip;
+    }
+
+    AnimationCurve LoopingCurve(float duration, float amplitude)
+    {
+        return new AnimationCurve(
+            new Keyframe(0f, 0f),
+            new Keyframe(duration * .25f, amplitude),
+            new Keyframe(duration * .5f, 0f),
+            new Keyframe(duration * .75f, -amplitude),
+            new Keyframe(duration, 0f));
     }
 
     void Update()
@@ -77,60 +228,17 @@ public sealed class AshWorldMotion : MonoBehaviour
                 waterRenderer.sharedMaterial.mainTextureOffset = waterOffset;
             }
         }
-        else if (kind == MotionKind.Hero && movingParts != null)
+        else if (kind == MotionKind.Hero && heroAnimation != null)
         {
             Vector3 planarVelocity = heroController != null
                 ? new Vector3(heroController.velocity.x, 0f, heroController.velocity.z)
                 : Vector3.zero;
             float speed = planarVelocity.magnitude;
-            float amount = Mathf.Clamp01(speed / 1.8f);
-            // A pronounced stride remains visible on a small phone screen.
-            float cadence = t * Mathf.Lerp(5.2f, 9.0f, amount);
-            float stride = Mathf.Sin(cadence) * amount;
-            float oppositeStride = Mathf.Sin(cadence + Mathf.PI) * amount;
-            float breathe = Mathf.Sin(t * 2.1f) * .018f;
-            float idleSway = Mathf.Sin(t * 1.35f) * .025f;
-            for (int i = 0; i < movingParts.Length; i++)
+            string wanted = speed < .12f ? "Idle" : speed < 3.15f ? "Walk" : "Run";
+            if (wanted != activeClip && heroAnimation.GetClip(wanted) != null)
             {
-                Transform p = movingParts[i];
-                if (p == null) continue;
-                string n = p.name.ToLowerInvariant();
-                p.localPosition = basePositions[i];
-                p.localRotation = baseRotations[i];
-
-                float side = basePositions[i].x < -.025f ? -1f : 1f;
-                if (n.Contains("armored arm") || n.Contains("shoulder pauldron"))
-                {
-                    p.localRotation = baseRotations[i] * Quaternion.Euler(stride * 52f, 0f, -side * Mathf.Abs(stride) * 9f);
-                    p.localPosition += Vector3.forward * stride * .07f;
-                }
-                else if (n.Contains("forearm bracer"))
-                {
-                    p.localRotation = baseRotations[i] * Quaternion.Euler(stride * 42f, 0f, -side * Mathf.Abs(stride) * 7f);
-                }
-                else if (n.Contains("greave") || n.Contains("boot") || n.Contains("knee guard"))
-                {
-                    float legStride = side < 0f ? stride : oppositeStride;
-                    p.localPosition += Vector3.forward * legStride * .24f;
-                    p.localPosition += Vector3.up * Mathf.Abs(legStride) * .045f;
-                    p.localRotation = baseRotations[i] * Quaternion.Euler(legStride * 42f, 0f, 0f);
-                }
-                else if (n.Contains("cloak") || n.Contains("torn edge"))
-                {
-                    p.localRotation = baseRotations[i] * Quaternion.Euler(Mathf.Abs(stride) * 16f, 0f, stride * 18f);
-                }
-                else if (n.Contains("torso") || n.Contains("chest plate") || n.Contains("chest crest") ||
-                         n.Contains("crossed leather strap") || n.Contains("waist belt") || n.Contains("belt buckle"))
-                {
-                    p.localPosition += Vector3.up * (breathe + Mathf.Abs(stride) * .035f);
-                    p.localRotation = baseRotations[i] * Quaternion.Euler(-Mathf.Abs(stride) * 5f, 0f, idleSway * 22f);
-                }
-                else if (n.Contains("face") || n.Contains("eye shadow") || n.Contains("eye glint") ||
-                         n.Contains("hood") || n.Contains("helmet"))
-                {
-                    p.localPosition += Vector3.up * breathe;
-                    p.localRotation = baseRotations[i] * Quaternion.Euler(Mathf.Sin(t * 2.1f) * 2.5f, idleSway * 18f, 0f);
-                }
+                heroAnimation.CrossFade(wanted, .12f);
+                activeClip = wanted;
             }
         }
     }
