@@ -93,7 +93,9 @@ def extract_asset(asset_id: str, category: str, archive_data: bytes) -> int:
                     continue
                 # Flatten each archive into its own isolated model folder, avoiding
                 # duplicate texture names colliding between different assets.
-                output_name = f"{asset_id}_{name}" if suffix != ".fbx" else f"{asset_id}.fbx"
+                # Each asset has its own folder, so preserve texture basenames exactly;
+                # FBX materials often refer to those names internally.
+                output_name = f"{asset_id}.fbx" if suffix == ".fbx" else name
                 out = target / output_name
                 with archive.open(item) as source, out.open("wb") as destination:
                     shutil.copyfileobj(source, destination)
