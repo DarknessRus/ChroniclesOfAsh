@@ -25,16 +25,16 @@ public sealed class AshWorldMotion : MonoBehaviour
         if (kind == MotionKind.Hero)
         {
             heroController = GetComponent<CharacterController>();
-            movingParts = new Transform[transform.childCount];
-            baseRotations = new Quaternion[transform.childCount];
-            basePositions = new Vector3[transform.childCount];
-            for (int i = 0; i < transform.childCount; i++)
+            // Traverse the complete hierarchy so grouped or nested parts animate too.
+            movingParts = GetComponentsInChildren<Transform>(true);
+            baseRotations = new Quaternion[movingParts.Length];
+            basePositions = new Vector3[movingParts.Length];
+            for (int i = 0; i < movingParts.Length; i++)
             {
-                movingParts[i] = transform.GetChild(i);
                 baseRotations[i] = movingParts[i].localRotation;
                 basePositions[i] = movingParts[i].localPosition;
             }
-            Debug.Log("[Ash Chronicles] Procedural hero animation initialized for " + movingParts.Length + " visible parts.");
+            Debug.Log("[Ash Chronicles] Hero animation initialized for " + movingParts.Length + " transforms.");
         }
         else if (kind == MotionKind.Water)
         {
@@ -83,11 +83,13 @@ public sealed class AshWorldMotion : MonoBehaviour
                 ? new Vector3(heroController.velocity.x, 0f, heroController.velocity.z)
                 : Vector3.zero;
             float speed = planarVelocity.magnitude;
-            float amount = Mathf.Clamp01(speed / 2.4f);
-            // A larger, slower stride stays readable on a phone screen.
-            float stride = Mathf.Sin(t * Mathf.Lerp(5.5f, 10.5f, amount)) * amount;
-            float oppositeStride = Mathf.Sin(t * Mathf.Lerp(5.5f, 10.5f, amount) + Mathf.PI) * amount;
-            float breathe = Mathf.Sin(t * 2.1f) * .012f;
+            float amount = Mathf.Clamp01(speed / 1.8f);
+            // A pronounced stride remains visible on a small phone screen.
+            float cadence = t * Mathf.Lerp(5.2f, 9.0f, amount);
+            float stride = Mathf.Sin(cadence) * amount;
+            float oppositeStride = Mathf.Sin(cadence + Mathf.PI) * amount;
+            float breathe = Mathf.Sin(t * 2.1f) * .018f;
+            float idleSway = Mathf.Sin(t * 1.35f) * .025f;
             for (int i = 0; i < movingParts.Length; i++)
             {
                 Transform p = movingParts[i];
@@ -97,36 +99,37 @@ public sealed class AshWorldMotion : MonoBehaviour
                 p.localRotation = baseRotations[i];
 
                 float side = basePositions[i].x < -.025f ? -1f : 1f;
-                if (n.Contains("armored arm"))
+                if (n.Contains("armored arm") || n.Contains("shoulder pauldron"))
                 {
-                    p.localRotation = baseRotations[i] * Quaternion.Euler(stride * 34f, 0f, -side * Mathf.Abs(stride) * 5f);
+                    p.localRotation = baseRotations[i] * Quaternion.Euler(stride * 52f, 0f, -side * Mathf.Abs(stride) * 9f);
+                    p.localPosition += Vector3.forward * stride * .07f;
                 }
                 else if (n.Contains("forearm bracer"))
                 {
-                    p.localRotation = baseRotations[i] * Quaternion.Euler(stride * 27f, 0f, -side * Mathf.Abs(stride) * 4f);
+                    p.localRotation = baseRotations[i] * Quaternion.Euler(stride * 42f, 0f, -side * Mathf.Abs(stride) * 7f);
                 }
                 else if (n.Contains("greave") || n.Contains("boot") || n.Contains("knee guard"))
                 {
                     float legStride = side < 0f ? stride : oppositeStride;
-                    p.localPosition += Vector3.forward * legStride * .12f;
-                    p.localPosition += Vector3.up * Mathf.Abs(legStride) * .025f;
-                    p.localRotation = baseRotations[i] * Quaternion.Euler(legStride * 24f, 0f, 0f);
+                    p.localPosition += Vector3.forward * legStride * .24f;
+                    p.localPosition += Vector3.up * Mathf.Abs(legStride) * .045f;
+                    p.localRotation = baseRotations[i] * Quaternion.Euler(legStride * 42f, 0f, 0f);
                 }
                 else if (n.Contains("cloak") || n.Contains("torn edge"))
                 {
-                    p.localRotation = baseRotations[i] * Quaternion.Euler(Mathf.Abs(stride) * 8f, 0f, stride * 7f);
+                    p.localRotation = baseRotations[i] * Quaternion.Euler(Mathf.Abs(stride) * 16f, 0f, stride * 18f);
                 }
                 else if (n.Contains("torso") || n.Contains("chest plate") || n.Contains("chest crest") ||
                          n.Contains("crossed leather strap") || n.Contains("waist belt") || n.Contains("belt buckle"))
                 {
-                    p.localPosition += Vector3.up * (breathe + Mathf.Abs(stride) * .018f);
-                    p.localRotation = baseRotations[i] * Quaternion.Euler(-Mathf.Abs(stride) * 3f, 0f, 0f);
+                    p.localPosition += Vector3.up * (breathe + Mathf.Abs(stride) * .035f);
+                    p.localRotation = baseRotations[i] * Quaternion.Euler(-Mathf.Abs(stride) * 5f, 0f, idleSway * 22f);
                 }
                 else if (n.Contains("face") || n.Contains("eye shadow") || n.Contains("eye glint") ||
                          n.Contains("hood") || n.Contains("helmet"))
                 {
                     p.localPosition += Vector3.up * breathe;
-                    p.localRotation = baseRotations[i] * Quaternion.Euler(Mathf.Sin(t * 2.1f) * 1.5f, 0f, 0f);
+                    p.localRotation = baseRotations[i] * Quaternion.Euler(Mathf.Sin(t * 2.1f) * 2.5f, idleSway * 18f, 0f);
                 }
             }
         }
