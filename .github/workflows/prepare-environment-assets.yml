@@ -1,4 +1,4 @@
-name: Prepare CC0 environment assets
+name: Prepare CC0 environment assets # retry with direct FBX downloads
 
 on:
   push:
