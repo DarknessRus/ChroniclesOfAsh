@@ -130,8 +130,13 @@ public static class AshOpenWorld
         {
             float z = -85f + i;
             float x = RiverX(z);
-            vertices[i*2] = new Vector3(x - 3.7f, .13f, z + 45f);
-            vertices[i*2+1] = new Vector3(x + 3.7f, .13f, z + 45f);
+            float worldZ = z + 45f;
+            // Follow the actual generated valley floor at both banks. A fixed Y value
+            // placed the entire river several metres above the terrain mesh.
+            float leftY = AshGroundSafety.SampleGroundHeight(new Vector3(x - 3.7f, 0f, worldZ)) + 0.10f;
+            float rightY = AshGroundSafety.SampleGroundHeight(new Vector3(x + 3.7f, 0f, worldZ)) + 0.10f;
+            vertices[i*2] = new Vector3(x - 3.7f, leftY, worldZ);
+            vertices[i*2+1] = new Vector3(x + 3.7f, rightY, worldZ);
             if (i < steps)
             {
                 int t = i * 6, a = i * 2;
