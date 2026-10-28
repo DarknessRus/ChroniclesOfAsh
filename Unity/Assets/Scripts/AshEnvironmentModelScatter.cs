@@ -46,31 +46,13 @@ public static class AshEnvironmentModelScatter
 
     public static void Build(Transform root)
     {
-        GameObject fir = Load("EnvironmentModels/conifer/fir_tree_01/fir_tree_01");
-        GameObject pine = Load("EnvironmentModels/conifer/pine_tree_01/pine_tree_01");
         GameObject rocks = Load("EnvironmentModels/rocks/rock_moss_set_01/rock_moss_set_01");
         GameObject cliff = Load("EnvironmentModels/cliffs/rock_face_02/rock_face_02");
         GameObject trunk = Load("EnvironmentModels/deadwood/dead_tree_trunk_02/dead_tree_trunk_02");
         GameObject moss = Load("EnvironmentModels/groundcover/moss_01/moss_01");
 
-        // Keep the central path, bridge, castle approach and river channel open.
-        Vector3[] firPositions = {
-            new Vector3(-62,0,7), new Vector3(-78,0,28), new Vector3(-55,0,49),
-            new Vector3(-91,0,66), new Vector3(-69,0,92), new Vector3(-99,0,112)
-        };
-        Vector3[] pinePositions = {
-            new Vector3(61,0,12), new Vector3(82,0,31), new Vector3(56,0,54),
-            new Vector3(94,0,73), new Vector3(72,0,96), new Vector3(103,0,119)
-        };
-        for (int i = 0; i < firPositions.Length; i++)
-        {
-            Vector3 p = firPositions[i];
-            Place(fir, root, "CC0 fir tree " + i, new Vector3(p.x, GroundY(p.x,p.z), p.z),
-                1.15f + (i % 3) * .18f, i * 47f);
-            p = pinePositions[i];
-            Place(pine, root, "CC0 pine tree " + i, new Vector3(p.x, GroundY(p.x,p.z), p.z),
-                1.05f + (i % 3) * .16f, i * 61f + 17f);
-        }
+        // Existing procedural trees remain in use; imported high-detail models are
+        // reserved for rocks, cliffs, fallen wood and ground cover to keep mobile meshes light.
 
         Vector3[] rockPositions = {
             new Vector3(-28,0,8), new Vector3(31,0,20), new Vector3(-37,0,39),
@@ -119,7 +101,7 @@ public static class AshEnvironmentModelScatter
 
         AddSourceCredit();
         Debug.Log("[Ash Chronicles] Imported CC0 environment assets placed and grounded: " +
-            "12 trees, 8 mossy rock clusters, 4 cliff rocks, 4 fallen trunks and 6 moss clumps.");
+            "8 mossy rock clusters, 4 cliff rocks, 4 fallen trunks and 6 moss clumps.");
     }
 
     static void AddSourceCredit()
