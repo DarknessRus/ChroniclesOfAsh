@@ -53,8 +53,6 @@ jobs:
           fi
           sudo prlimit --pid "$worker_pid" --nofile=1048576:1048576
           sudo prlimit --pid "$worker_pid" --nofile
-          ulimit -n 1048576
-          ulimit -Sn
       - uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
