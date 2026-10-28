@@ -121,7 +121,6 @@ public static class AshEnvironmentModelScatter
         Debug.Log("[Ash Chronicles] Imported CC0 environment assets placed and grounded: " +
             "12 trees, 8 mossy rock clusters, 4 cliff rocks, 4 fallen trunks and 6 moss clumps.");
     }
-}
 
     static void AddSourceCredit()
     {
