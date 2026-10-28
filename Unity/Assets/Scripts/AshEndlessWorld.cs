@@ -32,6 +32,7 @@ public sealed class AshEndlessWorld : MonoBehaviour
     bool oldWorldHidden;
     Transform chunkRoot;
     Material groundMat, waterMat, rockMat, barkMat, leafMat, crystalMat;
+    AshWorldAIClient aiClient;
 
     public static float SampleGroundHeight(Vector3 p)
     {
@@ -78,6 +79,7 @@ public sealed class AshEndlessWorld : MonoBehaviour
             if (controller != null) player = controller.transform;
         }
         if (player == null) { Debug.LogWarning("[Ash Endless] Player not found; generator disabled."); enabled = false; return; }
+        aiClient = GetComponent<AshWorldAIClient>();
 
         chunkRoot = new GameObject("Endless Generated Chunks").transform;
         chunkRoot.SetParent(transform, false);
@@ -167,8 +169,66 @@ public sealed class AshEndlessWorld : MonoBehaviour
         ScatterProps(root.transform, startZ, index);
         SpawnEnemies(root.transform, startZ, index);
         chunks.Add(new Chunk { index = index, root = root, startZ = startZ });
+        if (aiClient != null)
+            aiClient.RequestSegment(index, seed ^ (index * 7919), profile => ApplyAIProfile(index, profile));
     }
 
+    void ApplyAIProfile(int chunkIndex, AshWorldAIProfile profile)
+    {
+        if (profile == null) return;
+        Chunk chunk = chunks.Find(c => c.index == chunkIndex);
+        if (chunk == null || chunk.root == null) return;
+        Color biomeTint;
+        switch (profile.biome)
+        {
+            case "frozen_ruins": biomeTint = new Color(.62f, .78f, .92f); break;
+            case "crystal_wastes": biomeTint = new Color(.78f, .62f, .94f); break;
+            case "volcanic_rift": biomeTint = new Color(1f, .52f, .32f); break;
+            default: biomeTint = new Color(.72f, .82f, .68f); break;
+        }
+        foreach (Renderer renderer in chunk.root.GetComponentsInChildren<Renderer>())
+        {
+            string objectName = renderer.gameObject.name.ToLowerInvariant();
+            if (objectName.Contains("terrain") || objectName.Contains("river") || objectName.Contains("trunk") || objectName.Contains("crown") || objectName.Contains("boulder") || objectName.Contains("rune"))
+                renderer.material.color = Color.Lerp(renderer.material.color, biomeTint, .28f);
+        }
+        AshEndlessEnemyAI[] existing = chunk.root.GetComponentsInChildren<AshEndlessEnemyAI>();
+        for (int i = 0; i < existing.Length; i++)
+        {
+            if (i >= profile.enemyCount) { Destroy(existing[i].gameObject); continue; }
+            ConfigureAIEnemy(existing[i].gameObject, existing[i], profile, chunkIndex, i);
+        }
+        for (int i = existing.Length; i < profile.enemyCount; i++)
+        {
+            float x = i % 2 == 0 ? -5f - (i / 2) * 2f : 5f + (i / 2) * 2f;
+            float z = chunk.startZ + 13f + i * 7f;
+            float y = SampleGroundHeight(new Vector3(x, 0f, z));
+            GameObject enemy = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            enemy.name = "Ash " + profile.enemyType + " - AI " + chunkIndex + "-" + i;
+            enemy.transform.SetParent(chunk.root.transform, false);
+            enemy.transform.position = new Vector3(x, y + .95f, z);
+            enemy.transform.localScale = new Vector3(.78f, 1f, .78f);
+            enemy.AddComponent<AshEnemy>();
+            AshEndlessEnemyAI ai = enemy.AddComponent<AshEndlessEnemyAI>();
+            ai.player = player; ai.roamRadius = 6f;
+            ConfigureAIEnemy(enemy, ai, profile, chunkIndex, i);
+        }
+        Debug.Log("[Ash Endless] AI profile applied to chunk " + chunkIndex + ": " + profile.biome + ", " + profile.enemyType + " x" + profile.enemyCount + ", loot tier " + profile.lootTier + ". " + profile.description);
+    }
+
+    void ConfigureAIEnemy(GameObject enemy, AshEndlessEnemyAI ai, AshWorldAIProfile profile, int chunkIndex, int slot)
+    {
+        enemy.name = "Ash " + profile.enemyType + " - AI " + chunkIndex + "-" + slot;
+        ai.moveSpeed = 2.1f * Mathf.Clamp(profile.enemySpeedMultiplier, .7f, 1.6f);
+        AshEnemy health = enemy.GetComponent<AshEnemy>();
+        if (health != null) health.health = 60f * Mathf.Clamp(profile.enemyHealthMultiplier, .7f, 2.5f);
+        Renderer renderer = enemy.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            Color enemyColor = profile.enemyType == "bone_hound" ? new Color(.72f, .67f, .53f) : profile.enemyType == "rift_stalker" ? new Color(.42f, .12f, .62f) : profile.enemyType == "grave_knight" ? new Color(.34f, .38f, .43f) : profile.enemyType == "crystal_sentinel" ? new Color(.16f, .62f, .82f) : new Color(.38f, .16f, .22f);
+            renderer.material.color = enemyColor;
+        }
+    }
     void BuildGround(Transform parent, float startZ, int index)
     {
         var mesh = new Mesh { name = "Endless terrain chunk " + index };
