@@ -22,10 +22,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Download CC0 environment models and companion maps
         run: python .github/scripts/download_environment_models.py
-      - name: Download official CC0 animated knight model
-        run: |
-          python -m pip install "gdown==5.2.0"
-          python tools/build_skeletal_hero.py
+      - name: Download official CC0 animated knight model from itch.io
+        run: python tools/build_skeletal_hero.py
       - name: Download CC0 PBR texture maps
         run: python tools/download_pbr_textures.py
       - name: Generate pixel-based hero contour textures
