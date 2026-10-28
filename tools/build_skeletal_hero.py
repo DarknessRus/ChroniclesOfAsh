@@ -31,6 +31,7 @@ for relative in ASSETS:
     print(f"Downloaded {relative}: {len(data):,} bytes", flush=True)
 
 blend = ROOT / "build/assemble_skeletal_hero.py"
+blend.parent.mkdir(parents=True, exist_ok=True)
 blend.write_text(r'''
 import bpy, sys
 from pathlib import Path
