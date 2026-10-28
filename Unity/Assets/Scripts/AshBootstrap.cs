@@ -248,6 +248,7 @@ public class AshBootstrap : MonoBehaviour
         yield return null;
 
         if (!RunBuildStep("Создание героя и управления...", BuildPlayerAndHud)) yield break;
+        if (!RunBuildStep("Запуск бесконечной генерации мира...", delegate { worldRoot.AddComponent<AshEndlessWorld>(); })) yield break;
 
         // Remove the loading overlay only after the player, camera and HUD exist.
         // Otherwise it remains above the game and makes Start look unresponsive.
