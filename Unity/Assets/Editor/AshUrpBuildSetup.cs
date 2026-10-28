@@ -27,12 +27,47 @@ public sealed class AshUrpBuildSetup : IPreprocessBuildWithReport
         EnsureUrpAsset();
         if (!(GraphicsSettings.defaultRenderPipeline is UniversalRenderPipelineAsset))
             throw new BuildFailedException("Chronicles of Ash requires an active Universal Render Pipeline asset. Check Assets/Settings/AshMobileURP.asset.");
+        EnsureRuntimeMaterial();
+    }
+
+    // Keep the Resources material aligned with URP. The previous committed material
+    // referenced Unity's Built-in Standard shader, even though this project builds with URP.
+    // Because runtime-created objects clone this material, the mismatch could make the
+    // generated world render incorrectly on Android despite a successful APK build.
+    static void EnsureRuntimeMaterial()
+    {
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null)
+            throw new BuildFailedException("URP/Lit shader is unavailable; refusing to build a world with incompatible runtime materials.");
+
+        const string path = "Assets/Resources/AshRuntimeStandard.mat";
+        Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+        if (material == null)
+        {
+            material = new Material(shader);
+            material.name = "AshRuntimeStandard";
+            AssetDatabase.CreateAsset(material, path);
+        }
+        else if (material.shader != shader)
+        {
+            material.shader = shader;
+            EditorUtility.SetDirty(material);
+        }
+
+        if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", Color.white);
+        if (material.HasProperty("_Surface")) material.SetFloat("_Surface", 0f);
+        if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.35f);
+        AssetDatabase.SaveAssets();
+        Debug.Log("Chronicles of Ash: runtime material uses " + material.shader.name + " at " + path + ".");
     }
 
     static void EnsureUrpAsset()
     {
         if (GraphicsSettings.defaultRenderPipeline is UniversalRenderPipelineAsset)
+        {
+            EnsureRuntimeMaterial();
             return;
+        }
 
         const string folder = "Assets/Settings";
         const string pipelinePath = folder + "/AshMobileURP.asset";
