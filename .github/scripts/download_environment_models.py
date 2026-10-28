@@ -13,8 +13,6 @@ ROOT = Path(__file__).resolve().parents[2]
 DEST = ROOT / "Unity/Assets/Resources/EnvironmentModels"
 API = "https://api.polyhaven.com/files/"
 ASSETS = (
-    ("fir_tree_01", "conifer"),
-    ("pine_tree_01", "conifer"),
     ("rock_moss_set_01", "rocks"),
     ("rock_face_02", "cliffs"),
     ("dead_tree_trunk_02", "deadwood"),
@@ -122,11 +120,8 @@ def main() -> None:
         "Chronicles of Ash environment models\n"
         "Source: Poly Haven official public API (https://api.polyhaven.com/)\n"
         "License: CC0 1.0 Universal. The API requires a clear Poly Haven credit in the product.\n"
-        "Assets: fir_tree_01, pine_tree_01, rock_moss_set_01, rock_face_02, "
-        "dead_tree_trunk_02, moss_01\n"
-        "Asset pages: https://polyhaven.com/a/fir_tree_01 ; "
-        "https://polyhaven.com/a/pine_tree_01 ; "
-        "https://polyhaven.com/a/rock_moss_set_01 ; "
+        "Assets: rock_moss_set_01, rock_face_02, dead_tree_trunk_02, moss_01\n"
+        "Asset pages: https://polyhaven.com/a/rock_moss_set_01 ; "
         "https://polyhaven.com/a/rock_face_02 ; "
         "https://polyhaven.com/a/dead_tree_trunk_02 ; "
         "https://polyhaven.com/a/moss_01\n",
