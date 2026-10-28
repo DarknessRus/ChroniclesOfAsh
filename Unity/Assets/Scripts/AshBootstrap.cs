@@ -309,7 +309,23 @@ public class AshBootstrap : MonoBehaviour
         player.AddComponent<AshPlayerController>();
         // Keep the CharacterController capsule for collision, but show only the assembled armor model.
         player.GetComponent<Renderer>().enabled = false;
-        AshArtExpansion.DetailHero(player.transform, selectedHero);
+        // Prefer the imported, fully skinned character with external animation clips.
+        // Keep the procedural armor only as a safe fallback if asset preparation failed.
+        GameObject skinnedHeroPrefab = Resources.Load<GameObject>("Characters/AshHero");
+        if (skinnedHeroPrefab != null)
+        {
+            var skinnedHero = Instantiate(skinnedHeroPrefab, player.transform, false);
+            skinnedHero.name = "CC0 Skinned Fantasy Adventurer";
+            skinnedHero.transform.localPosition = new Vector3(0f, -.9f, 0f);
+            skinnedHero.transform.localRotation = Quaternion.identity;
+            skinnedHero.transform.localScale = Vector3.one;
+            Debug.Log("[Ash Chronicles] Loaded external skinned hero FBX from Resources/Characters/AshHero.");
+        }
+        else
+        {
+            Debug.LogError("[Ash Chronicles] External skinned hero missing; using procedural fallback.");
+            AshArtExpansion.DetailHero(player.transform, selectedHero);
+        }
         var heroMotion = player.AddComponent<AshWorldMotion>();
         heroMotion.kind = AshWorldMotion.MotionKind.Hero;
         AshDarkFantasyPresentation.AttachHeroAura(player.transform);

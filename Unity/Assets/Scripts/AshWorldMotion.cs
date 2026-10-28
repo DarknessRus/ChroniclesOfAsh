@@ -19,13 +19,35 @@ public sealed class AshWorldMotion : MonoBehaviour
     Renderer waterRenderer;
     Vector2 waterOffset;
     string activeClip = "";
+    string idleClipName = "Idle";
+    string walkClipName = "Walk";
+    string runClipName = "Run";
+    bool externalRig;
 
     void Start()
     {
         if (kind == MotionKind.Hero)
         {
             heroController = GetComponent<CharacterController>();
-            BuildSkeletalRigAndClips();
+            // Imported FBX exposes legacy Animation clips from the real skinned rig.
+            // Search children because Unity may place the Animation component on the FBX root.
+            heroAnimation = GetComponentInChildren<Animation>(true);
+            if (heroAnimation != null && FindClipContaining("Walking") != null && FindClipContaining("Running") != null)
+            {
+                externalRig = true;
+                idleClipName = FindClipContaining("Idle") != null ? FindClipContaining("Idle") : heroAnimation.clip.name;
+                walkClipName = FindClipContaining("Walking");
+                runClipName = FindClipContaining("Running");
+                heroAnimation.playAutomatically = false;
+                heroAnimation.wrapMode = WrapMode.Loop;
+                heroAnimation.Play(idleClipName);
+                activeClip = idleClipName;
+                Debug.Log("[Ash Chronicles] External skinned rig active. Clips: " + idleClipName + ", " + walkClipName + ", " + runClipName);
+            }
+            else
+            {
+                BuildSkeletalRigAndClips();
+            }
         }
         else if (kind == MotionKind.Water)
         {
@@ -37,6 +59,15 @@ public sealed class AshWorldMotion : MonoBehaviour
                 originalUV = waterMesh.uv;
             }
         }
+    }
+
+    string FindClipContaining(string token)
+    {
+        if (heroAnimation == null) return null;
+        foreach (AnimationState state in heroAnimation)
+            if (state.name.IndexOf(token, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return state.name;
+        return null;
     }
 
     void BuildSkeletalRigAndClips()
@@ -232,7 +263,7 @@ public sealed class AshWorldMotion : MonoBehaviour
                 ? new Vector3(heroController.velocity.x, 0f, heroController.velocity.z)
                 : Vector3.zero;
             float speed = planarVelocity.magnitude;
-            string wanted = speed < .12f ? "Idle" : speed < 3.15f ? "Walk" : "Run";
+            string wanted = speed < .12f ? idleClipName : speed < 3.15f ? walkClipName : runClipName;
             if (wanted != activeClip && heroAnimation.GetClip(wanted) != null)
             {
                 heroAnimation.CrossFade(wanted, .12f);
