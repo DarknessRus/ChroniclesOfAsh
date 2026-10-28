@@ -55,10 +55,9 @@ def select_model_and_maps(payload: dict):
         if "fbx" in path_text and ext == ".fbx":
             score = 100 if "1k" in path_text else 80 if "2k" in path_text else 10
             fbx.append((score, record))
-        elif ext in IMAGE_EXTS and ("1k" in path_text or "2k" in path_text):
-            # Keep maps to 1K when available for mobile. Prefer 1K over 2K.
-            score = 100 if "1k" in path_text else 50
-            maps.append((score, path, record))
+        elif ext in IMAGE_EXTS and "1k" in path_text:
+            # The Android build uses 1K maps to control APK size and memory use.
+            maps.append((100, path, record))
     if not fbx:
         raise RuntimeError("Poly Haven API returned no direct FBX file URL")
     fbx.sort(key=lambda item: item[0], reverse=True)
