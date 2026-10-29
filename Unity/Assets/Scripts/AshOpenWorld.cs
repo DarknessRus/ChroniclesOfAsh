@@ -136,12 +136,12 @@ public static class AshOpenWorld
             float z = -85f + i;
             float x = RiverX(z);
             float worldZ = z + 45f;
-            // Follow the actual generated valley floor at both banks. A fixed Y value
-            // placed the entire river several metres above the terrain mesh.
-            float leftY = RiverBankHeight(terrainCollider, x - 3.7f, worldZ);
-            float rightY = RiverBankHeight(terrainCollider, x + 3.7f, worldZ);
-            vertices[i*2] = new Vector3(x - 3.7f, leftY, worldZ);
-            vertices[i*2+1] = new Vector3(x + 3.7f, rightY, worldZ);
+            // Anchor the water to the actual riverbed centre, not the raised banks.
+            // Sampling the two banks lifted the whole water strip over the valley's
+            // deliberately lowered centre by up to about two metres.
+            float riverY = RiverBankHeight(terrainCollider, x, worldZ);
+            vertices[i*2] = new Vector3(x - 3.7f, riverY, worldZ);
+            vertices[i*2+1] = new Vector3(x + 3.7f, riverY, worldZ);
             if (i < steps)
             {
                 int t = i * 6, a = i * 2;

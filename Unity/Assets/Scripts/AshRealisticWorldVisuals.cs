@@ -395,14 +395,17 @@ public static class AshRealisticWorldVisuals
     {
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.ExponentialSquared;
-        RenderSettings.fogColor = new Color(.105f, .125f, .135f, 1f);
-        RenderSettings.fogDensity = .0065f;
+        // Keep distant haze atmospheric, not opaque: dense fog and a weak sun
+        // made the entire mobile valley too dark after the presentation pass.
+        RenderSettings.fogColor = new Color(.13f, .16f, .19f, 1f);
+        RenderSettings.fogDensity = .0024f;
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(.31f, .34f, .36f);
+        RenderSettings.ambientLight = new Color(.40f, .43f, .46f);
+        RenderSettings.ambientIntensity = 1.15f;
         if (RenderSettings.sun != null)
         {
-            RenderSettings.sun.color = new Color(.72f, .75f, .78f);
-            RenderSettings.sun.intensity = .72f;
+            RenderSettings.sun.color = new Color(.78f, .82f, .90f);
+            RenderSettings.sun.intensity = 1.05f;
             RenderSettings.sun.transform.rotation = Quaternion.Euler(31f, -32f, 0f);
         }
     }

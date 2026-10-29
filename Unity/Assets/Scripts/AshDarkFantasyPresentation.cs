@@ -195,17 +195,21 @@ public static class AshDarkFantasyPresentation
         {
             float z = -15f + i * 24f;
             float side = (i % 2 == 0) ? -1f : 1f;
-            Vector3 position = new Vector3(side * (13f + (i % 3) * 2.2f), .5f, z + 45f);
+            float pillarHeight = 2.5f + (i % 3) * .35f;
+            float worldZ = z + 45f;
+            float groundY = AshGroundSafety.SampleGroundHeight(new Vector3(side * (13f + (i % 3) * 2.2f), 0f, worldZ));
+            Vector3 position = new Vector3(side * (13f + (i % 3) * 2.2f), groundY + pillarHeight, worldZ);
             var pillar = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             pillar.name = "Ash Gothic - broken roadside pillar";
             pillar.transform.SetParent(root, false);
             pillar.transform.position = position;
-            pillar.transform.localScale = new Vector3(.8f, 2.5f + (i % 3) * .35f, .8f);
+            pillar.transform.localScale = new Vector3(.8f, pillarHeight, .8f);
             pillar.GetComponent<Renderer>().sharedMaterial = stoneMaterial;
             if (i % 2 == 0) AddTorch(root, position + new Vector3(side * .9f, 2.3f, 0f), i);
         }
 
-        Vector3 archCenter = new Vector3(0f, 0f, 105f);
+        float archGroundY = AshGroundSafety.SampleGroundHeight(new Vector3(0f, 0f, 105f));
+        Vector3 archCenter = new Vector3(0f, archGroundY, 105f);
         CreateStoneBlock(root, "Ash Gothic - arch left pier", archCenter + new Vector3(-4.1f, 2.2f, 0f), new Vector3(1.05f, 4.4f, 1.1f));
         CreateStoneBlock(root, "Ash Gothic - arch right pier", archCenter + new Vector3(4.1f, 2.2f, 0f), new Vector3(1.05f, 4.4f, 1.1f));
         CreateStoneBlock(root, "Ash Gothic - broken lintel", archCenter + new Vector3(0f, 4.45f, 0f), new Vector3(8.3f, .8f, 1.15f));
