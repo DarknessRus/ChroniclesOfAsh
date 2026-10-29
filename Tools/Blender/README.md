@@ -5,7 +5,7 @@ This folder contains a Blender Python generator for the first articulated Warrio
 ## What it creates
 
 - A real polygonal 3D character built from separately articulated armor pieces: dark steel plate, aged brass trim, ember-lit visor/rune, leather, and a segmented cloak.
-- A named armature with root, spine, head, arms, and legs.
+- A named armature with root, spine, head, arms, and legs, plus weighted skinned meshes for Unity.
 - Three animation actions: `Idle`, `Walk`, and `Run`.
 - A Unity FBX at `Unity/Assets/Resources/Characters/AshHero.fbx`, matching the existing `Resources.Load<GameObject>("Characters/AshHero")` path.
 
@@ -19,11 +19,11 @@ Install Blender 3.6 or newer, then from the repository root run:
 blender --background --python Tools/Blender/create_ash_warrior.py
 ```
 
-The script creates the output directory if needed. In Unity, allow the FBX to import, then inspect the imported hierarchy and the `Idle`, `Walk`, and `Run` clips in the Animation tab.
+The script creates the output directory and writes `ASSET_SOURCES.txt` with the generated FBX size and SHA-256 expected by the Unity import verifier. In Unity, keep both files together, allow the FBX to import, then inspect the imported hierarchy and the `Idle`, `Walk`, and `Run` clips in the Animation tab.
 
 ## Generate a downloadable FBX with GitHub Actions
 
-Open **Actions → Generate Warrior 3D Model → Run workflow**. The workflow is manual-only and uploads `AshHero.fbx` as an artifact; it does not trigger on every push. Download the artifact and copy `AshHero.fbx` to `Unity/Assets/Resources/Characters/` in your working checkout, then commit the binary through your normal review flow.
+Open **Actions → Generate Warrior 3D Model → Run workflow**. The workflow is manual-only and uploads `AshHero.fbx` plus `ASSET_SOURCES.txt` as an artifact; it does not trigger on every push. Download the artifact and copy both files to `Unity/Assets/Resources/Characters/` in your working checkout, then commit the binary and manifest through your normal review flow.
 
 ## Important limitations
 
