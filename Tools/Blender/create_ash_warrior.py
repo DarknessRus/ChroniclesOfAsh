@@ -12,6 +12,7 @@ Output:
 import bpy
 import math
 import os
+import hashlib
 from mathutils import Matrix
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -256,7 +257,15 @@ def build():
         add_leaf_bones=False, bake_anim=True, bake_anim_use_all_actions=True,
         bake_anim_use_nla_strips=False, bake_anim_force_startend_keying=True,
         use_mesh_modifiers=True, mesh_smooth_type="FACE", path_mode="AUTO")
+    with open(OUTPUT_FBX, "rb") as exported:
+        digest = hashlib.sha256(exported.read()).hexdigest()
+    manifest_path = os.path.join(OUTPUT_DIR, "ASSET_SOURCES.txt")
+    with open(manifest_path, "w", encoding="utf-8") as manifest:
+        manifest.write("Original FBX: Generated locally by Tools/Blender/create_ash_warrior.py\\n")
+        manifest.write("Original FBX bytes: " + str(os.path.getsize(OUTPUT_FBX)) + "\\n")
+        manifest.write("Original FBX SHA-256: " + digest + "\\n")
     print("ASH_WARRIOR_EXPORTED=" + OUTPUT_FBX)
+    print("ASH_WARRIOR_MANIFEST=" + manifest_path)
     print("ASH_WARRIOR_ACTIONS=Idle,Walk,Run")
     print("ASH_WARRIOR_MESH_PARTS=" + str(len(parts)))
 
