@@ -1,0 +1,1 @@
+Original FBX: Generated locally by Tools/Blender/create_ash_warrior.py\nOriginal FBX bytes: 1174188\nOriginal FBX SHA-256: 1d08e0fe1240039213a65c916bc6e463ad5490f2a1f4efd5bf45299aa936b10d\n
