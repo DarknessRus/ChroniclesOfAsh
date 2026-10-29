@@ -131,9 +131,8 @@ def animate(arm, name, frames, keys):
             bone.rotation_mode = "XYZ"
             bone.rotation_euler = rot
             bone.keyframe_insert(data_path="rotation_euler", frame=frame, group=bone_name)
-    for fcurve in action.fcurves:
-        for key in fcurve.keyframe_points:
-            key.interpolation = "BEZIER"
+    # Keep Blender defaults for keyframe interpolation. Blender 4.4+ uses layered
+    # Actions and may not expose the legacy action.fcurves collection.
     action.use_fake_user = True
     action["looping"] = True
     action["intended_frames"] = frames
