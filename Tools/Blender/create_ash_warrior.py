@@ -108,16 +108,23 @@ def create_armature():
     return arm
 
 def attach_to_bone(obj, arm, bone_name):
-    bpy.context.view_layer.update()
-    bone = arm.pose.bones[bone_name]
-    bone_matrix = arm.matrix_world @ bone.matrix
+    # Build a real weighted skinned mesh, not a rigid bone-parented object.
+    # Each armor piece is weighted 100% to its controlling bone; Unity imports
+    # it as a SkinnedMeshRenderer with bind poses, which the existing verifier expects.
+    if obj.type != "MESH":
+        return
     world = obj.matrix_world.copy()
     obj.parent = arm
-    obj.parent_type = "BONE"
-    obj.parent_bone = bone_name
-    obj.matrix_parent_inverse = bone_matrix.inverted()
+    obj.parent_type = "OBJECT"
     obj.matrix_world = world
+    group = obj.vertex_groups.new(name=bone_name)
+    if obj.data.vertices:
+        group.add([v.index for v in obj.data.vertices], 1.0, "REPLACE")
+    modifier = obj.modifiers.new("AshWarrior_Armature", "ARMATURE")
+    modifier.object = arm
+    modifier.use_vertex_groups = True
     obj["attached_bone"] = bone_name
+
 
 def animate(arm, name, frames, keys):
     action = bpy.data.actions.new(name)
