@@ -115,8 +115,8 @@ def attach_to_bone(obj, arm, bone_name):
     obj.parent = arm
     obj.parent_type = "BONE"
     obj.parent_bone = bone_name
-    obj.matrix_world = world
     obj.matrix_parent_inverse = bone_matrix.inverted()
+    obj.matrix_world = world
     obj["attached_bone"] = bone_name
 
 def animate(arm, name, frames, keys):
