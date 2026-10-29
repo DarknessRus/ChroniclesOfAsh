@@ -12,7 +12,23 @@ Output:
 import bpy
 import math
 import os
+import sys
 import hashlib
+import subprocess
+
+# Ubuntu's packaged Blender FBX exporter imports NumPy, which is not always
+# installed alongside Blender. Bootstrap that system dependency only on GitHub
+# Actions runners; local Blender installs are left untouched.
+if os.environ.get("GITHUB_ACTIONS") == "true":
+    try:
+        import numpy  # noqa: F401
+    except ImportError:
+        subprocess.run(["sudo", "apt-get", "update"], check=True)
+        subprocess.run(["sudo", "apt-get", "install", "-y", "python3-numpy"], check=True)
+        system_packages = "/usr/lib/python3/dist-packages"
+        if system_packages not in sys.path:
+            sys.path.append(system_packages)
+        import numpy  # noqa: F401
 from mathutils import Matrix
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
