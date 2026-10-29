@@ -1,0 +1,48 @@
+name: Generate Warrior 3D Model
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/generate-warrior-model.yml'
+      - 'Tools/Blender/create_ash_warrior.py'
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Python syntax
+        run: python3 -m py_compile Tools/Blender/create_ash_warrior.py
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+
+      - name: Generate articulated Warrior FBX
+        run: blender --background --python Tools/Blender/create_ash_warrior.py
+
+      - name: Verify exported file
+        run: |
+          test -s Unity/Assets/Resources/Characters/AshHero.fbx
+          test -s Unity/Assets/Resources/Characters/ASSET_SOURCES.txt
+          ls -lh Unity/Assets/Resources/Characters/AshHero.fbx Unity/Assets/Resources/Characters/ASSET_SOURCES.txt
+
+      - name: Upload FBX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AshHero-FBX
+          path: |
+            Unity/Assets/Resources/Characters/AshHero.fbx
+            Unity/Assets/Resources/Characters/ASSET_SOURCES.txt
+          if-no-files-found: error
+          retention-days: 7
