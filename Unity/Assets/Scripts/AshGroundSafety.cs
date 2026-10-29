@@ -118,6 +118,8 @@ public static class AshGroundSafety
 
     public static float SampleGroundHeight(Vector3 worldPosition)
     {
+        // Beyond the original valley, use the same deterministic height field as the endless chunks.
+        if (worldPosition.z > 150f) return AshEndlessWorld.SampleGroundHeight(worldPosition);
         float x = Mathf.Clamp(worldPosition.x, -139.5f, 139.5f);
         float z = Mathf.Clamp(worldPosition.z - TerrainOffsetZ, -139.5f, 139.5f);
 
