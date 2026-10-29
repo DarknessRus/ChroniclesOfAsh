@@ -10,7 +10,7 @@ on:
       - 'Tools/Blender/create_ash_warrior.py'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   generate:
@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Check Python syntax
         run: python3 -m py_compile Tools/Blender/create_ash_warrior.py
@@ -36,6 +38,20 @@ jobs:
           test -s Unity/Assets/Resources/Characters/AshHero.fbx
           test -s Unity/Assets/Resources/Characters/ASSET_SOURCES.txt
           ls -lh Unity/Assets/Resources/Characters/AshHero.fbx Unity/Assets/Resources/Characters/ASSET_SOURCES.txt
+
+      - name: Commit generated Warrior model into the Unity project
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Unity/Assets/Resources/Characters/AshHero.fbx Unity/Assets/Resources/Characters/ASSET_SOURCES.txt
+          if git diff --cached --quiet; then
+            echo "Generated Warrior FBX is already up to date."
+            exit 0
+          fi
+          git commit -m "Add generated Ash Warrior FBX model"
+          git push origin HEAD:main
 
       - name: Upload FBX artifact
         uses: actions/upload-artifact@v4
