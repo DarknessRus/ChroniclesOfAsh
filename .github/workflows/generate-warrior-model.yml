@@ -25,12 +25,15 @@ jobs:
       - name: Verify exported file
         run: |
           test -s Unity/Assets/Resources/Characters/AshHero.fbx
-          ls -lh Unity/Assets/Resources/Characters/AshHero.fbx
+          test -s Unity/Assets/Resources/Characters/ASSET_SOURCES.txt
+          ls -lh Unity/Assets/Resources/Characters/AshHero.fbx Unity/Assets/Resources/Characters/ASSET_SOURCES.txt
 
       - name: Upload FBX artifact
         uses: actions/upload-artifact@v4
         with:
           name: AshHero-FBX
-          path: Unity/Assets/Resources/Characters/AshHero.fbx
+          path: |
+            Unity/Assets/Resources/Characters/AshHero.fbx
+            Unity/Assets/Resources/Characters/ASSET_SOURCES.txt
           if-no-files-found: error
           retention-days: 7
