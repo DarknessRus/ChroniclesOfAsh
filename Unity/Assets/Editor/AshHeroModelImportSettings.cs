@@ -51,12 +51,17 @@ public sealed class AshHeroModelImportSettings : AssetPostprocessor
             string sourceManifest = Path.Combine(Path.GetDirectoryName(fbxPath), "ASSET_SOURCES.txt");
             if (File.Exists(sourceManifest))
             {
-                var sourceLines = File.ReadAllLines(sourceManifest);
-                foreach (var line in sourceLines.Where(value => value.StartsWith("Original FBX:", StringComparison.Ordinal) ||
-                    value.StartsWith("Original FBX bytes:", StringComparison.Ordinal) ||
-                    value.StartsWith("Original FBX SHA-256:", StringComparison.Ordinal)))
+                // Normalize BOM and whitespace before matching manifest fields.
+                var sourceLines = File.ReadAllLines(sourceManifest)
+                    .Select(value => value.Trim().TrimStart('\uFEFF').Trim())
+                    .ToArray();
+                foreach (var line in sourceLines.Where(value =>
+                    value.StartsWith("Original FBX:", StringComparison.OrdinalIgnoreCase) ||
+                    value.StartsWith("Original FBX bytes:", StringComparison.OrdinalIgnoreCase) ||
+                    value.StartsWith("Original FBX SHA-256:", StringComparison.OrdinalIgnoreCase)))
                     report.AppendLine(line);
-                var expectedHashLine = sourceLines.FirstOrDefault(value => value.StartsWith("Original FBX SHA-256:", StringComparison.Ordinal));
+                var expectedHashLine = sourceLines.FirstOrDefault(value =>
+                    value.StartsWith("Original FBX SHA-256:", StringComparison.OrdinalIgnoreCase));
                 if (expectedHashLine != null)
                 {
                     var expectedHash = expectedHashLine.Substring("Original FBX SHA-256:".Length).Trim();
