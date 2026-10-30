@@ -68,7 +68,7 @@ def make_outline(alpha_crop: np.ndarray, full_size: tuple[int, int], x_offset: i
     rgba[:, :, 3][:, x0:x1] = np.maximum(rgba[:, :, 3][:, x0:x1], gold[:, sx0:sx1])
 
     # All transparent pixels have zero alpha; RGB is irrelevant there.
-    return Image.fromarray(rgba, "RGBA")
+    return Image.fromarray(rgba)
 
 
 def main() -> None:
