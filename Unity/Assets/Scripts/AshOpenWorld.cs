@@ -144,9 +144,13 @@ public static class AshOpenWorld
             // Anchor the water to the actual riverbed centre, not the raised banks.
             // Sampling the two banks lifted the whole water strip over the valley's
             // deliberately lowered centre by up to about two metres.
-            float riverY = RiverBankHeight(terrainCollider, x, worldZ);
-            vertices[i*2] = new Vector3(x - 3.7f, riverY, worldZ);
-            vertices[i*2+1] = new Vector3(x + 3.7f, riverY, worldZ);
+            // Sample both banks independently against the exact terrain collider.
+            // Using the centre height for both edges can leave the water strip floating
+            // on one bank where the river crosses a sloped section of the valley.
+            float leftRiverY = RiverBankHeight(terrainCollider, x - 3.7f, worldZ);
+            float rightRiverY = RiverBankHeight(terrainCollider, x + 3.7f, worldZ);
+            vertices[i*2] = new Vector3(x - 3.7f, leftRiverY, worldZ);
+            vertices[i*2+1] = new Vector3(x + 3.7f, rightRiverY, worldZ);
             if (i < steps)
             {
                 int t = i * 6, a = i * 2;
