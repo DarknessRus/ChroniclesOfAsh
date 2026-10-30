@@ -63,7 +63,10 @@ public static class AshRealisticWorldVisuals
         if (groundNormal == null) groundNormal = MakeGroundNormal();
         if (groundRoughness != null && groundSmoothness == null)
             groundSmoothness = MakeSmoothnessMap(groundRoughness, "Ash Ground - smoothness from CC0 roughness");
-        Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+        Shader shader = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null
+            ? Shader.Find("Universal Render Pipeline/Lit")
+            : Shader.Find("Standard");
+        if (shader == null) shader = Shader.Find("Standard");
         if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
         if (shader == null) shader = renderer.sharedMaterial.shader;
         // Use an untinted albedo so the scanned texture is clearly visible on mobile; the
@@ -220,7 +223,10 @@ public static class AshRealisticWorldVisuals
             Debug.LogError("[Ash Chronicles] Required 2K snow texture maps are missing from Resources/PBR/Snow.");
             return;
         }
-        Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+        Shader shader = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null
+            ? Shader.Find("Universal Render Pipeline/Lit")
+            : Shader.Find("Standard");
+        if (shader == null) shader = Shader.Find("Standard");
         if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
         if (shader == null) return;
         Material snowMaterial = CreatePbrMaterial("Ash Distant Peaks - 2K snow PBR", shader,
@@ -247,7 +253,10 @@ public static class AshRealisticWorldVisuals
             return;
         }
 
-        Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+        Shader shader = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null
+            ? Shader.Find("Universal Render Pipeline/Lit")
+            : Shader.Find("Standard");
+        if (shader == null) shader = Shader.Find("Standard");
         if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
         if (shader == null)
         {
