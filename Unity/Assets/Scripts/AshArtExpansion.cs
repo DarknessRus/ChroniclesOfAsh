@@ -176,8 +176,8 @@ public static class AshArtExpansion
             float radius = 10f + (i % 5) * 3.3f;
             float rockX = Mathf.Cos(angle) * radius;
             float rockZ = Mathf.Sin(angle) * radius + 8f;
-            float rockY = AshGroundSafety.SampleGroundHeight(new Vector3(rockX, 0f, rockZ));
-            Vector3 p = new Vector3(rockX, rockY, rockZ);
+            // Part() adds the sampled terrain elevation for world decorations.
+            Vector3 p = new Vector3(rockX, 0f, rockZ);
             Vector3 rockScale = new Vector3(.7f + (i % 3) * .35f, .4f + (i % 4) * .15f, .65f);
             p.y += rockScale.y * .43f;
             Part(root, PrimitiveType.Sphere, "Ash-covered boulder", p,
@@ -187,8 +187,7 @@ public static class AshArtExpansion
             {
                 float trunkX = rockX + 1.2f;
                 float trunkZ = rockZ + .6f;
-                float trunkY = AshGroundSafety.SampleGroundHeight(new Vector3(trunkX, 0f, trunkZ)) + .95f;
-                Part(root, PrimitiveType.Cylinder, "Fallen dead trunk", new Vector3(trunkX, trunkY, trunkZ),
+                Part(root, PrimitiveType.Cylinder, "Fallen dead trunk", new Vector3(trunkX, .95f, trunkZ),
                     new Vector3(.22f, 1.9f, .22f), new Color(.19f, .13f, .105f), new Vector3(0, 0, 66f));
             }
         }
