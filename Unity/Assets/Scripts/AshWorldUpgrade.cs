@@ -17,6 +17,10 @@ public static class AshWorldUpgrade
     static GameObject Part(Transform root,PrimitiveType type,string name,Vector3 p,Vector3 s,Color c,Vector3? rotation=null,bool glow=false,bool solid=false)
     {
         var g=GameObject.CreatePrimitive(type);
+        // All castle/ruin pieces are authored relative to the nominal ground plane.
+        // Offset each piece by the terrain height at its footprint so the structures
+        // follow the actual sculpted valley instead of assuming Y=0 everywhere.
+        p.y += AshGroundSafety.SampleGroundHeight(new Vector3(p.x, 0f, p.z));
         g.name=name;g.transform.SetParent(root,false);g.transform.position=p;g.transform.localScale=s;
         if(rotation.HasValue)g.transform.rotation=Quaternion.Euler(rotation.Value);
         var r=g.GetComponent<Renderer>();if(r!=null)r.sharedMaterial=Mat(c,.8f,glow);
@@ -30,6 +34,7 @@ public static class AshWorldUpgrade
         const int sides=9, rings=4;
         var go=new GameObject(name);
         go.transform.SetParent(root,false);
+        position.y += AshGroundSafety.SampleGroundHeight(new Vector3(position.x, 0f, position.z));
         go.transform.position=position;
         go.transform.localScale=scale;
         go.transform.rotation=Quaternion.Euler(rotation);
@@ -76,6 +81,7 @@ public static class AshWorldUpgrade
     static GameObject Spire(Transform root,Vector3 p,float height,Color color)
     {
         var g=new GameObject("Gothic spire");
+        p.y += AshGroundSafety.SampleGroundHeight(new Vector3(p.x, 0f, p.z));
         g.transform.SetParent(root,false);g.transform.position=p;g.transform.localScale=new Vector3(height*.46f,height,height*.46f);
         var mesh=new Mesh();const int n=12;
         var v=new Vector3[n+1];var tri=new int[n*3];
