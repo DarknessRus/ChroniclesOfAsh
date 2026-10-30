@@ -27,7 +27,16 @@ public static class AshArtExpansion
         // remain positioned in world space. Without this, armor appears below the character.
         bool attachedActor = parent != null &&
             (parent.GetComponent<CharacterController>() != null || parent.GetComponent<AshEnemy>() != null);
-        go.transform.position = attachedActor ? parent.TransformPoint(position) : position;
+        if (attachedActor)
+            go.transform.position = parent.TransformPoint(position);
+        else
+        {
+            // World props were authored against a flat zero-height floor. Add the
+            // sampled terrain elevation so walls, cottages, stones and ruins follow
+            // the sculpted valley instead of hovering over low areas or sinking into hills.
+            position.y += AshGroundSafety.SampleGroundHeight(new Vector3(position.x, 0f, position.z));
+            go.transform.position = position;
+        }
         go.transform.localScale = scale;
         if (rotation.HasValue)
         {
@@ -46,6 +55,10 @@ public static class AshArtExpansion
     {
         var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
         go.transform.SetParent(parent, true);
+        bool attachedActor = parent != null &&
+            (parent.GetComponent<CharacterController>() != null || parent.GetComponent<AshEnemy>() != null);
+        if (!attachedActor)
+            position.y += AshGroundSafety.SampleGroundHeight(new Vector3(position.x, 0f, position.z));
         go.transform.position = position;
         go.transform.localScale = scale;
         const int sides = 12;
