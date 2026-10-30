@@ -249,6 +249,13 @@ public class AshBootstrap : MonoBehaviour
 
         if (!RunBuildStep("Создание героя и управления...", BuildPlayerAndHud)) yield break;
 
+        // Run grounding only after every world-generation pass has finished. Earlier this
+        // ran inside AshOpenWorld, before ruins and valley cliffs were added, so those
+        // later props could remain floating or intersect the terrain.
+        if (!RunBuildStep("Финальная привязка объектов к рельефу...", delegate {
+            AshGroundSafety.AlignSceneryToTerrain(worldRoot.transform);
+        })) yield break;
+
         // Remove the loading overlay only after the player, camera and HUD exist.
         // Otherwise it remains above the game and makes Start look unresponsive.
         if (loadingRoot != null)
