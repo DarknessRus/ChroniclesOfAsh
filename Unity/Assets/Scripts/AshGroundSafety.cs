@@ -85,7 +85,10 @@ public static class AshGroundSafety
                 n.StartsWith("CC0 fallen tree trunk") ||
                 n.StartsWith("CC0 forest moss") ||
                 n == "Layered valley cliff" || n == "Cliff ledge" ||
-                n == "Distant jagged mountain" || n == "Mountain broken crown";
+                n == "Distant jagged mountain" || n == "Mountain broken crown" ||
+                n == "Ash-covered boulder" || n == "Fallen dead trunk" ||
+                n == "Weathered basalt" || n == "Ashen footpath" ||
+                n == "Old stone bridge";
             if (!isGroundProp) { skipped++; continue; }
 
             Renderer[] renderers = item.GetComponentsInChildren<Renderer>(true);
