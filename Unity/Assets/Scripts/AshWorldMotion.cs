@@ -22,7 +22,6 @@ public sealed class AshWorldMotion : MonoBehaviour
     string idleClipName = "Idle";
     string walkClipName = "Walk";
     string runClipName = "Run";
-    bool externalRig;
 
     void Start()
     {
@@ -34,7 +33,6 @@ public sealed class AshWorldMotion : MonoBehaviour
             heroAnimation = GetComponentInChildren<Animation>(true);
             if (heroAnimation != null && FindClipContaining("Walk") != null && FindClipContaining("Run") != null)
             {
-                externalRig = true;
                 idleClipName = FindClipContaining("Idle") != null ? FindClipContaining("Idle") : heroAnimation.clip.name;
                 walkClipName = FindClipContaining("Walk");
                 runClipName = FindClipContaining("Run");
