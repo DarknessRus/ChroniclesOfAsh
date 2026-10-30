@@ -130,7 +130,9 @@ public static class AshDarkFantasyPresentation
 
     static Material MakeGlowMaterial(Color color)
     {
-        Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+        Shader shader = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null
+            ? Shader.Find("Universal Render Pipeline/Particles/Unlit")
+            : Shader.Find("Particles/Standard Unlit");
         if (shader == null) shader = Shader.Find("Particles/Standard Unlit");
         if (shader == null) shader = Shader.Find("Sprites/Default");
         var material = new Material(shader);
@@ -185,7 +187,12 @@ public static class AshDarkFantasyPresentation
 
     static void BuildGothicRuins(Transform root)
     {
-        stoneMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
+        Shader stoneShader = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null
+            ? Shader.Find("Universal Render Pipeline/Lit") : Shader.Find("Standard");
+        if (stoneShader == null) stoneShader = Shader.Find("Standard");
+        if (stoneShader == null) stoneShader = Shader.Find("Universal Render Pipeline/Lit");
+        if (stoneShader == null) throw new System.InvalidOperationException("No compatible shader for gothic stone.");
+        stoneMaterial = new Material(stoneShader);
         stoneMaterial.name = "Ash Gothic - charcoal stone";
         stoneMaterial.color = new Color(.105f,.12f,.145f);
         if (stoneMaterial.HasProperty("_Smoothness")) stoneMaterial.SetFloat("_Smoothness", .22f);
