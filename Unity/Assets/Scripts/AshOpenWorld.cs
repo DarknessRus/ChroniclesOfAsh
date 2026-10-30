@@ -97,8 +97,14 @@ public static class AshOpenWorld
         // Use an explicit URP Lit material and disable back-face culling on this generated
         // landscape. This makes the ground visible even if a mobile graphics backend treats
         // procedural triangle winding differently, while the collider still uses the same mesh.
-        Shader terrainShader = Shader.Find("Universal Render Pipeline/Lit");
+        // This project currently uses Unity built-in rendering (no URP pipeline asset is assigned).
+        // Prefer the built-in Standard shader in that configuration; a URP shader can be found
+        // by name yet render pink/black when the active pipeline is built-in.
+        Shader terrainShader = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null
+            ? Shader.Find("Universal Render Pipeline/Lit")
+            : Shader.Find("Standard");
         if (terrainShader == null) terrainShader = Shader.Find("Standard");
+        if (terrainShader == null) terrainShader = Shader.Find("Universal Render Pipeline/Lit");
         if (terrainShader == null)
             throw new System.InvalidOperationException("No compatible shader found for the open-world terrain.");
         var terrainMaterial = new Material(terrainShader);
